@@ -1,0 +1,9 @@
+[run]
+omit =
+      */purchase/tests/*
+      */purchase/config.py
+
+[report]
+omit =
+      */purchase/tests/*
+      */purchase/config.py
