@@ -1,0 +1,27 @@
+version: '3.7'
+
+services:
+  api:
+    container_name: purchase-api
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - './api:/usr/src/app'
+    ports:
+      - 5000:5000
+    environment:
+      - DB_URL=mongodb://database-purchase:27017/purchase
+      - DB_TEST_URL=mongodb://database-purchase:27017/purchase_test
+      - FLASK_APP=purchase/__init__.py
+      - FLASK_ENV=development
+      - APP_SETTINGS=purchase.config.DevelopmentConfig
+  
+  database-purchase:
+    container_name: database-purchase
+    image: mongo
+    command: mongod
+    volumes:
+      - /mongo_purchase:/data/db
+    ports:
+      - 27017:27017
