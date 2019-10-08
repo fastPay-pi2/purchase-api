@@ -1,6 +1,6 @@
 import json
 from purchase.tests.base import BaseTestCase
-from purchase.tests.jsonschemas.schemas import\
+from purchase.jsonschemas.schemas import\
     ping_schema
 from jsonschema import validate
 
