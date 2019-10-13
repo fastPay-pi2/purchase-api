@@ -1,33 +1,3 @@
-# version: '3.7'
-
-# services:
-#   api:
-#     container_name: purchase-api
-#     build:
-#       context: .
-#       dockerfile: ./docker/Dockerfile
-#     volumes:
-#       - './project:/usr/src/app'
-#     ports:
-#       - 5000:5000
-#     environment:
-#       - DB_NAME=purchase
-#       - DB_URL=mongodb://database-purchase:27017/purchase
-#       - DB_TEST_URL=mongodb://database-purchase:27017/purchase_test
-#       - FLASK_APP=purchase/__init__.py
-#       - FLASK_ENV=development
-#       - APP_SETTINGS=purchase.config.DevelopmentConfig
-#       - PRODUCTS_API=http://localhost:5000/
-  
-#   database-purchase:
-#     container_name: database-purchase
-#     image: mongo
-#     command: mongod
-#     volumes:
-#       - /mongo_purchase:/data/db
-#     ports:
-#       - 27017:27017
-
 version: '3.7'
 
 services:
@@ -38,6 +8,8 @@ services:
       dockerfile: ./docker/Dockerfile
     volumes:
       - './purchase_api:/usr/src/app'
+    networks:
+      - fastpay-network
     ports:
       - 5000:5000
     environment:
@@ -48,7 +20,7 @@ services:
       - FLASK_APP=application/__init__.py
       - FLASK_ENV=development
       - APP_SETTINGS=application.config.DevelopmentConfig
-      - PRODUCTS_API=http://localhost:5000/
+      - PRODUCTS_API=http://app:3000/
   
   database-purchase:
     container_name: database-purchase
@@ -56,5 +28,11 @@ services:
     command: mongod
     volumes:
       - /mongo_purchase:/data/db
+    networks:
+      - fastpay-network
     ports:
       - 27017:27017
+  
+networks:
+  fastpay-network:
+    name: fastpay-network

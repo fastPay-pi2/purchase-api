@@ -1,12 +1,21 @@
 from flask import Blueprint, request
 from flask_restful import Resource, Api
 from application.api.models import CartModel, PurchaseModel
-from application.api.controller import validate_rfid
+from application.api.controller import validate_rfid, http_request
 from mongoengine.errors import DoesNotExist   
 import sys
+import os   
+from requests.exceptions import HTTPError
+import json
+from flask_cors import CORS
+
 
 views_blueprint = Blueprint('views', __name__)
 api = Api(views_blueprint)
+CORS(views_blueprint)
+
+
+PRODUCTS_API = os.getenv("PRODUCTS_API", "")
 
 
 class Cart(Resource):
@@ -109,13 +118,21 @@ class Purchase(Resource):
             items_list = []
             for item in post_data['items']:
                 validate_rfid(item)
+                get_item_url = PRODUCTS_API + f"item/{item}"
+                item = http_request(get_item_url, "get")
+                # print(item,file=sys.stderr)
                 items_list.append(item)
             purchase.purchased_products = items_list
             purchase.save()
+            purchase.update(add_to_set__purchased_products=items_list)
         except TypeError:
             return {
                 "message": "RFID in wrong format"
             }, 400
+        except HTTPError as http_error:
+            return {
+                "message": "Item not found"
+            }, 404
         except DoesNotExist:
             return {
                 "message": "Cart not found"
@@ -130,6 +147,7 @@ class Purchase(Resource):
 api.add_resource(Cart, '/api/cart/<rfid>',
                  endpoint="cart",
                  methods=['GET', 'DELETE', 'PUT'])
+# https://github.com/flask-restful/flask-restful/issues/114
 api.add_resource(Cart, '/api/cart/',
                  endpoint="carts",
                  methods=['GET', 'POST'])
