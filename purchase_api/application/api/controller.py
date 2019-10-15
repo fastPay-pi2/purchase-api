@@ -60,7 +60,7 @@ def update_cart(new_rfid, rfid):
     cart.rfid = new_rfid
     cart.save()
 
-def post_purchase(post_data):
+def save_purchase(post_data):
     try:
         validate_rfid(post_data['cart'])
         cart = get_doc_by_attr(CartModel, "rfid", post_data['cart'] )
@@ -72,14 +72,26 @@ def post_purchase(post_data):
         items_list = []
         for item in post_data['items']:
             validate_rfid(item)
-            get_item_url = PRODUCTS_API + f"item/{item}"
-            item = http_request(get_item_url, "get")
-            items_list.append(item[0]['rfid'])
+        product_items = { 
+            "rfids": post_data["items"]
+        }
+        beautiful_item_url = PRODUCTS_API + f"beautifulitems"
+        beautiful_item = get(beautiful_item_url, json=product_items)
+        items_list = beautiful_item.json()
+        cart = get_doc_by_attr(CartModel, "rfid", post_data["cart"])
     except IndexError:
         raise IndexError("Item not Found")
     else:
         purchase.purchased_products = items_list
-        purchase.save()
+        purchase.cart = cart['id']
+        purchase_id = purchase.save()
+        return {
+            'message': f"purchase {purchase_id['id']} created"
+        }
+
+def post_purchase(post_data):
+    success_message = save_purchase(post_data)
+    return handle_exceptions(None, success_message)
 
 
 def delete_cart(rfid):
@@ -101,15 +113,28 @@ def get_all_carts(rfid):
             carts.append({"rfid": cart['rfid']})
         return carts, 200 
 
+def update_purchase(post_data, purchase_id):
+    new_state = post_data['state']
+    items_list = []
+    for item in post_data['items']:
+            validate_rfid(item)
+    product_items = { 
+        "rfids": post_data["items"]
+    }
+    beautiful_item_url = PRODUCTS_API + f"beautifulitems"
+    beautiful_item = get(beautiful_item_url, json=product_items)
+    items_list = beautiful_item.json()
+    # purchase.state = new_state
+    # purchase.purchased_products.append(items_list)
+    a = {"state": new_state, "purchased_products": items_list}
+    PurchaseModel.objects(id=purchase_id).update(set__state=new_state,
+                                                 set__purchased_products=items_list)
+    # PurchaseModel.update_one(purchase, a)
 
 def handle_exceptions(method, success_message, *args):
     try:
-        if len(args) == 1:
-            method(args[0])
-        elif len(args) == 2:
-            method(args[0], args[1])
-        elif len(args) == 3:
-            method(args[0], args[1], args[2])
+        if method:
+            method(*args)
     except TypeError as err:
         return {
                 "message": str(err)

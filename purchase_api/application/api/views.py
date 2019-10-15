@@ -6,10 +6,12 @@ from application.api.controller import validate_rfid, \
                                        get_doc_by_attr, \
                                        save_cart, \
                                        update_cart, \
-                                       post_purchase, \
+                                       save_purchase, \
                                        handle_exceptions, \
                                        delete_cart, \
-                                       get_all_carts
+                                       get_all_carts, \
+                                       update_purchase, \
+                                       post_purchase
 from mongoengine.errors import DoesNotExist, NotUniqueError
 import sys
 import os   
@@ -63,11 +65,16 @@ class Cart(Resource):
 class Purchase(Resource):
     def post(self):
         post_data = request.get_json()
+        return post_purchase(post_data)
+
+    def put(self, purchase_id):
+        post_data = request.get_json()
         success_message = {
-            'message': "purchase created"
+            "message": f"Purchase {purchase_id} successfully updated"
         }
-        return handle_exceptions(post_purchase, success_message,
-                                 post_data)
+        return handle_exceptions(update_purchase,
+                                 success_message,
+                                 post_data, purchase_id)
 
 api.add_resource(Cart, '/api/cart/<rfid>',
                  endpoint="cart",
@@ -78,4 +85,7 @@ api.add_resource(Cart, '/api/cart/',
                  methods=['GET', 'POST'])
 api.add_resource(Purchase, '/api/purchase/',
                  endpoint="purchase",
-                 methods=['POST'])
+                 methods=['POST', 'PUT'])
+api.add_resource(Purchase, '/api/purchase/<purchase_id>',
+                 endpoint="update_purchase",
+                 methods=['PUT'])
