@@ -1,13 +1,24 @@
 from flask import Blueprint, request
 from flask_restful import Resource, Api
 from application.api.models import CartModel, PurchaseModel
-from application.api.controller import validate_rfid, http_request
-from mongoengine.errors import DoesNotExist   
+from application.api.controller import validate_rfid, \
+                                       http_request, \
+                                       get_doc_by_attr, \
+                                       save_cart, \
+                                       update_cart, \
+                                       save_purchase, \
+                                       handle_exceptions, \
+                                       delete_cart, \
+                                       get_all_carts, \
+                                       update_purchase, \
+                                       post_purchase
+from mongoengine.errors import DoesNotExist, NotUniqueError
 import sys
 import os   
 from requests.exceptions import HTTPError
 import json
 from flask_cors import CORS
+import sys
 
 
 views_blueprint = Blueprint('views', __name__)
@@ -15,134 +26,55 @@ api = Api(views_blueprint)
 CORS(views_blueprint)
 
 
-PRODUCTS_API = os.getenv("PRODUCTS_API", "")
-
-
 class Cart(Resource):
     def get(self, rfid=None):
         if rfid is None:
-            carts = []
-            if not CartModel.objects:
-                return carts, 200
-            else:
-                for cart in CartModel.objects:
-                    carts.append({"rfid": carts.rfid})
-                return carts, 200
-            
+            return get_all_carts(rfid)      
         else:
-            try:
-                validate_rfid(rfid)
-                cart = CartModel.objects.get(rfid=rfid)
-            except TypeError:
-                return {
-                    "message": "RFID in wrong format"
-                }
-            except DoesNotExist:
-                return {
-                    "message": "Cart not found"
-                }
-            else:
-                return {
-                    'cart': cart['rfid']
-                }, 200
+            success_message = {
+                'cart': rfid
+            }
+            return handle_exceptions(get_doc_by_attr, success_message,
+                                     CartModel,"rfid", rfid)
     
     def post(self):
-        try:
-            post_data = request.get_json()
-            cart_rfid = post_data['rfid']
-            validate_rfid(cart_rfid)
-            cart = CartModel()
-            cart.rfid = cart_rfid
-            cart.save()
-        except TypeError:
-            return {
-                "message": "RFID in wrong format"
-            }, 400
-        else:
-            return {
+        post_data = request.get_json()
+        cart_rfid = post_data['rfid']
+        success_message = {
                 'message': f'Cart {cart_rfid} successfully added'
-            }, 200
+        }
+        return handle_exceptions(save_cart,
+                                 success_message, cart_rfid)
 
     def delete(self, rfid):
-        try:
-            validate_rfid(rfid)
-            cart = CartModel.objects.get(rfid=rfid)
-            cart.delete()
-        except TypeError:
-            return {
-                "message": "RFID in wrong format"
-            }
-        except DoesNotExist:
-            return {
-                "message": "Cart not found"
-            }
-        else:
-            return {
-                'cart': f'Cart {rfid} successfully removed'
-            }, 200
-    
+        success_message = {
+                'message': f'Cart {rfid} successfully removed'
+        }
+        return handle_exceptions(delete_cart,
+                                 success_message, rfid)
+
     def put(self, rfid):
-        try:
-            post_data = request.get_json()
-            new_rfid = post_data['rfid']
-
-            validate_rfid(rfid)
-            cart = CartModel.objects.get(rfid=rfid)
-
-            cart.rfid = new_rfid
-            cart.save()
-        except TypeError:
-            return {
-                "message": "RFID in wrong format"
-            }
-        except DoesNotExist:
-            return {
-                "message": "Cart not found"
-            }
-        else:
-            return {
-                'cart': f'Cart {rfid} successfully updated to {new_rfid}'
-            }, 200
-
+        post_data = request.get_json()
+        new_rfid = post_data['rfid']
+        success_message = {
+            "message": f"Cart {rfid} successfully updated to {new_rfid}"
+        }
+        return handle_exceptions(update_cart, success_message,
+                                 new_rfid, rfid)
+        
 class Purchase(Resource):
     def post(self):
-        try:
-            post_data = request.get_json()
+        post_data = request.get_json()
+        return post_purchase(post_data)
 
-            validate_rfid(post_data['cart'])
-            cart = CartModel.objects.get(rfid=post_data['cart'])
-            
-            purchase = PurchaseModel()
-            purchase.user_id = post_data['user_id']
-            purchase.state = post_data['state']
-            items_list = []
-            for item in post_data['items']:
-                validate_rfid(item)
-                get_item_url = PRODUCTS_API + f"item/{item}"
-                item = http_request(get_item_url, "get")
-                # print(item,file=sys.stderr)
-                items_list.append(item)
-            purchase.purchased_products = items_list
-            purchase.save()
-            purchase.update(add_to_set__purchased_products=items_list)
-        except TypeError:
-            return {
-                "message": "RFID in wrong format"
-            }, 400
-        except HTTPError as http_error:
-            return {
-                "message": "Item not found"
-            }, 404
-        except DoesNotExist:
-            return {
-                "message": "Cart not found"
-            }, 404
-        else:
-            return {
-                'message': "purchase created"
-            }, 200
-
-
+    def put(self, purchase_id):
+        post_data = request.get_json()
+        success_message = {
+            "message": f"Purchase {purchase_id} successfully updated"
+        }
+        return handle_exceptions(update_purchase,
+                                 success_message,
+                                 post_data, purchase_id)
 
 api.add_resource(Cart, '/api/cart/<rfid>',
                  endpoint="cart",
@@ -153,4 +85,7 @@ api.add_resource(Cart, '/api/cart/',
                  methods=['GET', 'POST'])
 api.add_resource(Purchase, '/api/purchase/',
                  endpoint="purchase",
-                 methods=['POST'])
+                 methods=['POST', 'PUT'])
+api.add_resource(Purchase, '/api/purchase/<purchase_id>',
+                 endpoint="update_purchase",
+                 methods=['PUT'])
