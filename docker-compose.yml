@@ -1,8 +1,8 @@
 version: '3.7'
 
 services:
-  api:
-    container_name: purchase-api
+  purchase_api:
+    container_name: purchase_api
     build:
       context: .
       dockerfile: ./docker/Dockerfile
@@ -22,8 +22,8 @@ services:
       - APP_SETTINGS=application.config.DevelopmentConfig
       - PRODUCTS_API=http://app:3000/
   
-  database-purchase:
-    container_name: database-purchase
+  purchase_db:
+    container_name: purchase_db
     image: mongo
     command: mongod --port 27018
     volumes:
