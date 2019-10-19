@@ -1,6 +1,7 @@
 from application.api.models.cart_model import CartModel
 from application.api.utils.validators import validate_rfid
 from application.api.utils.db_utils import get_doc_by_attr
+from application.api.utils.data_formatter import build_cart_json
 from mongoengine.errors import NotUniqueError
 
 def save_cart(cart_rfid):
@@ -34,5 +35,5 @@ def get_all_carts(rfid):
         return carts, 200
     else:
         for cart in CartModel.objects:
-            carts.append({"rfid": cart['rfid']})
+            carts.append(build_cart_json(cart))
         return carts, 200 

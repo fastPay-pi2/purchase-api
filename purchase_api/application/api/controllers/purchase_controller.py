@@ -96,6 +96,10 @@ def update_purchase(post_data, purchase_id):
                                                  set__purchased_products=items_list)
     # PurchaseModel.update_one(purchase, a)
 
+def delete_purchase(purchase_id):
+    purchase = get_doc_by_attr(PurchaseModel,"id", purchase_id)
+    purchase.delete()
+
 def get_all_purchases():
     purchases = []
     if not PurchaseModel.objects:

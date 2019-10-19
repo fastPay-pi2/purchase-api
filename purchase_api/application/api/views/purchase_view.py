@@ -2,7 +2,10 @@ from flask import Blueprint, request
 from flask_restful import Resource, Api
 from application.api.utils.db_utils import get_doc_by_attr, db_dump
 
-from application.api.controllers.purchase_controller import save_purchase, update_purchase, post_purchase, start_purchase, get_all_purchases
+from application.api.controllers.purchase_controller import (
+    save_purchase, update_purchase, post_purchase,
+    start_purchase, get_all_purchases, delete_purchase
+)
 
 from application.api.utils.validators import validate_rfid, validate_fields
 from application.api.utils.handlers import handle_exceptions
@@ -45,8 +48,12 @@ class Purchase(Resource):
 
     def get(self):
         purchases = get_all_purchases()
-        # db_json = db_dump()
         return purchases, 200
+
+    def delete(self, purchase_id):
+        success_message = f'Purchase {purchase_id} successfully removed'
+
+        return handle_exceptions(delete_purchase, success_message, str(purchase_id))
         
 api.add_resource(StartPurchase, '/api/purchase/start/',
                  endpoint='start_purchase',
@@ -56,7 +63,7 @@ api.add_resource(Purchase, '/api/purchase/',
                  methods=['POST', 'GET'])
 api.add_resource(Purchase, '/api/purchase/<purchase_id>',
                  endpoint="update_purchase",
-                 methods=['PUT'])
+                 methods=['PUT', 'DELETE'])
 # api.add_resource(Purchase, '/api/purchase/',
 #                  endpoint="all_purchases",
 #                  methods=['GET'])
