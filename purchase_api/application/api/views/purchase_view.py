@@ -27,12 +27,12 @@ class StartPurchase(Resource):
 class Purchase(Resource):
     def post(self):
         data = request.get_json()
-        is_valid = validate_fields(data, 'user_id', 'cart_id')
-        if is_valid:
-            return start_purchase(data)
-        else:
-            err = 'Fields are missing'
+        err = validate_fields(data, 'user_id', 'cart_id')
+        if err:
+            err = f'Fields are missing: {", ".join(err)}'
             return format_message(err, 400)
+        else:
+            return start_purchase(data)
 
     def put(self, purchase_id):
         post_data = request.get_json()

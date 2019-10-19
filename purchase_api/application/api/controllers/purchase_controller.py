@@ -43,7 +43,6 @@ def save_purchase(post_data):
             'message': f"purchase {purchase_id['id']} created"
         }
 
-import json
 def start_purchase(data):
     try:
         validate_rfid(data['cart_id'])
@@ -55,22 +54,22 @@ def start_purchase(data):
         purchase.state = 'PENDING'
         purchase.purchased_products = []
         purchase_id = purchase.save()
-        return format_message(f'Purchase for {purchase_id["user_id"]} successfully created', 200)
 
+        msg = f'Purchase for {purchase_id["user_id"]} successfully created'
+        return format_message(msg, 200)
     except Exception as err:
         return {'err': str(err)}
 
-
-    try:
+    # try:
             
-        cart = build_cart_json([cart])
-        purchase = ''
-        purchase = build_purchase_json([purchase_id])
+    #     cart = build_cart_json([cart])
+    #     purchase = ''
+    #     purchase = build_purchase_json([purchase_id])
     
-    except Exception as err:
-        return {'err':  str(err)}
+    # except Exception as err:
+    #     return {'err':  str(err)}
 
-    return {'cart': cart, 'purchase': purchase}
+    # return {'cart': cart, 'purchase': purchase}
 
    
 def post_purchase(post_data):

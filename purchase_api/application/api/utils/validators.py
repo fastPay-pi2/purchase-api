@@ -9,10 +9,12 @@ def validate_rfid(rfid):
         raise TypeError("RFID in wrong format!!!!!")
 
 def validate_fields(json, *args):
+    err = []
     if not json:
-        return False
+        err.append('Could not find any json for request')
+        return err
 
     for arg in args:
         if arg not in json:
-            return False
-    return True
+            err.append(arg)
+    return err
