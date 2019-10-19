@@ -4,13 +4,18 @@ from application.api.controllers.cart_controller import save_cart, update_cart, 
 from application.api.models.cart_model import CartModel
 
 
-from application.api.controller import get_doc_by_attr, \
-                                       db_dump
+from application.api.utils.db_utils import get_doc_by_attr, db_dump
 
 
-from application.api.utils import validate_rfid, http_request, handle_exceptions
+from application.api.utils.validators import validate_rfid
+from application.api.utils.handlers import handle_exceptions
 
 from flask_cors import CORS
+
+
+import sys
+
+
 
 cart_blueprint = Blueprint('cart_view', __name__)
 api = Api(cart_blueprint)
@@ -30,19 +35,28 @@ class Cart(Resource):
     
     def post(self):
         post_data = request.get_json()
-        cart_rfid = post_data['rfid']
-        success_message = {
-                'message': f'Cart {cart_rfid} successfully added'
-        }
-        return handle_exceptions(save_cart,
-                                 success_message, cart_rfid)
+        if 'rfid' in post_data:
+            cart_rfid = post_data['rfid']
+            success_message = f'Cart {cart_rfid} successfully added'
+
+            return handle_exceptions(save_cart, success_message, cart_rfid)
+        else:
+            return {'error': 'RFID is missing'}, 400
+
+    def put(self, rfid):
+        post_data = request.get_json()
+        if 'new_rfid' in post_data:
+            new_rfid = post_data['new_rfid']
+            success_message = f'Cart {new_rfid} successfully updated'
+            
+            return handle_exceptions(update_cart, success_message, str(new_rfid), str(rfid))
+        else:
+            return {'error': 'NEW RFID is missing'}, 400
 
     def delete(self, rfid):
-        success_message = {
-                'message': f'Cart {rfid} successfully removed'
-        }
-        return handle_exceptions(delete_cart,
-                                 success_message, rfid)
+        success_message = f'Cart {rfid} successfully removed'
+
+        return handle_exceptions(delete_cart, success_message, str(rfid))
 
 
 api.add_resource(Cart, '/api/cart/<rfid>',

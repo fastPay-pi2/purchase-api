@@ -7,12 +7,12 @@ class PurchaseModel(mongoengine.Document):
     init_db()
     user_id = mongoengine.IntField(required=True)
     state = mongoengine.StringField(max_length=10,
-                                    choices=['PENDING', 'ABORTED', 'FINISHED'],
+                                    choices=['PENDING', 'ABORTED', 'COMPLETED'],
                                     required=True)
-    date = mongoengine.DateTimeField(default=datetime.datetime.utcnow,
+    date = mongoengine.DateTimeField(default=datetime.datetime.now(),
                                      required=True)
     purchased_products = mongoengine.ListField(mongoengine.DictField(),
-                                               required=True)
+                                               required=False)
     cart = mongoengine.ObjectIdField(required=True)
     meta = {
         'db_alias': 'purchase',

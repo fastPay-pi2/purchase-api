@@ -1,4 +1,7 @@
 from application.api.models.cart_model import CartModel
+from application.api.utils.validators import validate_rfid
+from application.api.utils.db_utils import get_doc_by_attr
+from mongoengine.errors import NotUniqueError
 
 def save_cart(cart_rfid):
     validate_rfid(cart_rfid)
