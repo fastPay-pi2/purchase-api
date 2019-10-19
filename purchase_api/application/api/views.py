@@ -11,7 +11,8 @@ from application.api.controller import validate_rfid, \
                                        delete_cart, \
                                        get_all_carts, \
                                        update_purchase, \
-                                       post_purchase
+                                       post_purchase, \
+                                       db_dump
 from mongoengine.errors import DoesNotExist, NotUniqueError
 import sys
 import os   
@@ -76,6 +77,11 @@ class Purchase(Resource):
                                  success_message,
                                  post_data, purchase_id)
 
+    def get(self):
+        db_json = db_dump()
+        return db_json, 200
+        
+
 api.add_resource(Cart, '/api/cart/<rfid>',
                  endpoint="cart",
                  methods=['GET', 'DELETE', 'PUT'])
@@ -85,7 +91,10 @@ api.add_resource(Cart, '/api/cart/',
                  methods=['GET', 'POST'])
 api.add_resource(Purchase, '/api/purchase/',
                  endpoint="purchase",
-                 methods=['POST', 'PUT'])
+                 methods=['POST', 'GET'])
 api.add_resource(Purchase, '/api/purchase/<purchase_id>',
                  endpoint="update_purchase",
                  methods=['PUT'])
+api.add_resource(Purchase, '/api/purchase/',
+                 endpoint="all_purchases",
+                 methods=['GET'])
