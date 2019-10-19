@@ -7,7 +7,7 @@ from application.api.models import CartModel, PurchaseModel
 from mongoengine.errors import DoesNotExist, NotUniqueError
 from mongoengine.errors import NotUniqueError
 import os
-
+import json
 
 PRODUCTS_API = os.getenv("PRODUCTS_API", "")
 
@@ -130,6 +130,48 @@ def update_purchase(post_data, purchase_id):
     PurchaseModel.objects(id=purchase_id).update(set__state=new_state,
                                                  set__purchased_products=items_list)
     # PurchaseModel.update_one(purchase, a)
+
+def get_all_collection_docs(model_name):
+    all_docs = []
+    if not model_name.objects:
+        pass
+    else:
+        for doc in model_name.objects:
+            document = doc.to_json()
+            doc_json = json.loads(document)
+            all_docs.append(doc_json)
+    return all_docs
+
+def build_cart_json(all_carts):
+    carts = []
+    cart_dict = {}
+    for cart in all_carts:
+        cart_dict["_id"] = cart["_id"]["$oid"] 
+        cart_dict["rfid"] = cart["rfid"]
+        carts.append(cart_dict)
+    return carts
+
+def build_purchase_json(all_purchases):
+    purchases = []
+    purchases_dict = {}
+    for purchase in all_purchases:
+        purchases_dict["_id"] = purchase["_id"]["$oid"]
+        purchases_dict["user_id"] = purchase["user_id"]
+        purchases_dict["state"] = purchase["state"]
+        purchases_dict["date"] = purchase["date"]["$date"]
+        purchases_dict["purchased_products"] = purchase["purchased_products"]
+        purchases_dict["cart"] = purchase["cart"]["$oid"]
+    return purchases_dict
+
+def db_dump():
+    all_carts = get_all_collection_docs(CartModel)
+    carts = build_cart_json(all_carts)
+    all_purchases = get_all_collection_docs(PurchaseModel)
+    purchases = build_purchase_json(all_purchases)
+    return {
+        "cart": carts,
+        "purchase": purchases
+    }
 
 def handle_exceptions(method, success_message, *args):
     try:

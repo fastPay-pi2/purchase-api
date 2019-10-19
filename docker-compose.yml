@@ -14,9 +14,9 @@ services:
       - 5000:5000
     environment:
       - DB_NAME=purchase
-      - DB_URL=mongodb://database-purchase:27018/purchase
+      - DB_URL=mongodb://purchase_db:27018/purchase
       - DB_TEST_NAME=purchase_test
-      - DB_TEST_URL=mongodb://database-purchase:27018/purchase_test
+      - DB_TEST_URL=mongodb://purchase_db:27018/purchase_test
       - FLASK_APP=application/__init__.py
       - FLASK_ENV=development
       - APP_SETTINGS=application.config.DevelopmentConfig
