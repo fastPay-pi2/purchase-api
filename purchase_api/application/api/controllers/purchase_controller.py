@@ -23,9 +23,11 @@ def start_purchase(data):
         purchase.state = 'PENDING'
         purchase.purchased_products = []
         purchase_id = purchase.save()
-
         msg = f'Purchase for {purchase_id["user_id"]} successfully created'
-        return data_formatter.format_message(msg, 200)
+        return {
+            "msg": msg, 
+            "id": f'{str(purchase_id["id"])}'
+        }, 200
     except Exception as err:
         return {'err': str(err)}
 
