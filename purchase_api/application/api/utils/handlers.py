@@ -1,6 +1,7 @@
 from application.api.utils.data_formatter import format_message
 from mongoengine.errors import DoesNotExist, NotUniqueError
 
+
 def handle_exceptions(method, success_message, *args):
     try:
         if method:

@@ -4,6 +4,7 @@ def build_cart_json(cart):
     cart_dict["rfid"] = cart["rfid"]
     return cart_dict
 
+
 def build_purchase_json(purchase):
     purchases_dict = dict()
     purchases_dict["_id"] = str(purchase["id"])
@@ -14,6 +15,7 @@ def build_purchase_json(purchase):
     purchases_dict["cart"] = str(purchase["cart"])
     return purchases_dict
 
+
 def format_message(message, status=500):
     if isinstance(message, dict):
         return message, status
@@ -22,5 +24,5 @@ def format_message(message, status=500):
         message = {'msg': message}
     else:
         message = {'error': message}
-    
+
     return message, status

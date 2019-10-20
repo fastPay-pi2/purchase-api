@@ -1,8 +1,7 @@
-from application.api import init_db
 from application.api.models.purchase_model import PurchaseModel
+from application.api import init_db
 import mongoengine
-import sys
-import datetime
+
 
 class CartModel(mongoengine.Document):
     init_db()

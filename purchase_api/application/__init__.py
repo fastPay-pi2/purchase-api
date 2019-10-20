@@ -1,12 +1,11 @@
-from flask import Flask, jsonify
-from flask_restful import Resource, Api
-import os
 from flask_cors import CORS
+from flask import Flask
+import os
 
 cors = CORS()
 
-def create_app(script_info=None):
 
+def create_app(script_info=None):
     # instantiate the app
     app = Flask(__name__)
 
@@ -24,6 +23,6 @@ def create_app(script_info=None):
     # shell context for flask cli
     @app.shell_context_processor
     def ctx():
-        return {'app': app, 'db': db}
+        return {'app': app}  # tirei um 'db': db
 
     return app

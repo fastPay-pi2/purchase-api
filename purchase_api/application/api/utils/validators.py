@@ -1,12 +1,14 @@
 import re
 
+
 def validate_rfid(rfid):
     if(re.search(r'^[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-'
-                r'[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-'
-                r'[0-9a-fA-F]{2}$', rfid)):
+                 r'[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-'
+                 r'[0-9a-fA-F]{2}$', rfid)):
         return True
     else:
-        raise TypeError("RFID in wrong format!!!!!")
+        raise TypeError("RFID in wrong format")
+
 
 def validate_fields(json, *args):
     err = []
