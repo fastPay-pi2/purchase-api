@@ -52,12 +52,13 @@ def delete_purchase(purchase_id):
     purchase.delete()
 
 
-def get_all_purchases():
-    purchases = []
-    if not PurchaseModel.objects:
-        return purchases, 200
+def get_purchases(user_id):
+    if user_id:
+        purchases = PurchaseModel.objects(user_id=user_id)
     else:
-        for purchase in PurchaseModel.objects:
-            purchases.append(data_formatter.build_purchase_json(purchase))
-            # purchases.append(json.loads(purchase.to_json()))
-        return purchases
+        purchases = PurchaseModel.objects
+
+    response = []
+    for p in purchases:
+        response.append(data_formatter.build_purchase_json(p))
+    return response

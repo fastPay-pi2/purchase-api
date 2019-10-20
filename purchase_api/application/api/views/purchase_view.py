@@ -8,7 +8,7 @@ from application.api.utils import (
     handlers
 )
 from application.api.controllers.purchase_controller import (
-    update_purchase, start_purchase, get_all_purchases, delete_purchase
+    update_purchase, start_purchase, get_purchases, delete_purchase
 )
 
 purchase_blueprint = Blueprint('views', __name__)
@@ -38,8 +38,8 @@ class Purchase(Resource):
                                               success_message,
                                               data, purchase_id)
 
-    def get(self):
-        purchases = get_all_purchases()
+    def get(self, user_id=None):
+        purchases = get_purchases(user_id)
         return purchases, 200
 
     def delete(self, purchase_id):
@@ -55,3 +55,6 @@ api.add_resource(Purchase, '/api/purchase/',
 api.add_resource(Purchase, '/api/purchase/<purchase_id>',
                  endpoint="update_purchase",
                  methods=['PUT', 'DELETE'])
+api.add_resource(Purchase, '/api/userpurchases/<user_id>',
+                 endpoint="list_user_purchases",
+                 methods=['GET'])
