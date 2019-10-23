@@ -22,7 +22,6 @@ class DevelopmentConfig(BaseConfig):
     }
 
 
-
 class TestingConfig(BaseConfig):
     """Testing configuration"""
     TESTING = True

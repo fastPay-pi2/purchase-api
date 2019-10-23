@@ -20,7 +20,7 @@ services:
       - FLASK_APP=application/__init__.py
       - FLASK_ENV=development
       - APP_SETTINGS=application.config.DevelopmentConfig
-      - PRODUCTS_API=http://app:3000/
+      - PRODUCTS_API=http://products_api:3000/
   
   purchase_db:
     container_name: purchase_db
@@ -32,7 +32,22 @@ services:
       - fastpay-network
     ports:
       - 27018:27018
-  
+
+  purchase_db_population:
+    container_name: purchase_db_population
+    build:
+      context: .
+      dockerfile: ./docker/database_population.Dockerfile
+    volumes:
+      - ./database_population/:/usr/src/app/
+    networks:
+      - fastpay-network
+    depends_on:
+      - purchase_api
+    environment:
+      - PRODUCT_API_URL=http://products_api:3000
+      - PURCHASE_API_URL=http://purchase_api:5000/api
+
 networks:
   fastpay-network:
     name: fastpay-network

@@ -2,7 +2,7 @@
 
 from flask_testing import TestCase
 from application import create_app
-from requests import Response
+# from requests import Response
 
 
 class BaseTestCase(TestCase):

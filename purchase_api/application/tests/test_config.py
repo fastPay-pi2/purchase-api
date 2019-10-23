@@ -23,7 +23,6 @@ class TestDevelopmentConfig(TestCase):
                 'db': os.environ.get('DB_NAME'),
                 'host': os.environ.get('DB_URL')
             }
-            
         )
 
 
