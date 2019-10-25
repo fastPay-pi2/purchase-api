@@ -10,4 +10,9 @@ docker-compose run api  coverage report
 
 ## Executar banco de dados
 
-docker-compose exec database-purchase mongo mongodb://database-purchase:27017/purchase
+docker-compose exec purchase_db mongo mongodb://purchase_db:27018/purchase
+
+## Executar população do banco de dados
+
+docker-compose run --rm purchase_db_population python popula_carts.py
+docker-compose up purchase_db_population
