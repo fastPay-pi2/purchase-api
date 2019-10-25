@@ -1,0 +1,48 @@
+stages:
+  - test
+  - build
+  - deploy
+
+code_style:
+  image: python:3.7-alpine
+  stage: test
+  before_script:
+    - pip install flake8
+  script:
+    - flake8
+
+
+unit_test:
+  image: python:3.7-alpine
+  stage: test
+  variables:
+    FLASK_ENV: development
+    FLASK_APP: application/__init__.py
+    APP_SETTINGS: application.config.DevelopmentConfig  
+  before_script:
+    - pip install -r docker/requirements.txt    
+    - export DB_NAME=purchase
+    - export DB_URL=mongodb://purchase_db:27018/purchase
+    - export DB_TEST_NAME=purchase_test
+    - export DB_TEST_URL=mongodb://purchase_db:27018/purchase_test
+    - export PRODUCTS_API=http://products_api:3000/
+  script:
+    - coverage run -m unittest discover
+
+build-app:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  variables:
+    IMAGE_NAME: "app"
+    CI_REGISTRY_IMAGE: "registry.gitlab.com/fastpay-pi2/purchase-api"
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_TOKEN registry.gitlab.com
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE/$IMAGE_NAME:latest -f ./docker/Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:latest
+  tags:
+    - docker
+  only:
+    - master

@@ -1,14 +1,8 @@
 import requests
 import logging
-import json
 import sys
-import re
 import os
-import itertools
-import random
-import time
-from random import randrange
-from popula_items import generate_rfids_list
+from popula_purchases import generate_rfids_list
 
 FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
 logging.basicConfig(
@@ -30,6 +24,7 @@ def build_cart_json(cart):
     }
     return cart_json
 
+
 def create_carts(carts_number, carts_list, table):
     """
     Create items in database
@@ -48,10 +43,12 @@ def create_carts(carts_number, carts_list, table):
             logging.error(ex)
             sys.exit()
 
+
 def main():
     carts_number = 30
     carts_list = generate_rfids_list(carts_number, True)
     create_carts(carts_number, carts_list, "cart")
+
 
 if __name__ == '__main__':
     main()
