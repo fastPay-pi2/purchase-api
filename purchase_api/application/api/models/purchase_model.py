@@ -18,7 +18,7 @@ class CartModel(mongoengine.Document):
 
 class PurchaseModel(mongoengine.Document):
     init_db()
-    user_id = mongoengine.IntField(required=True)
+    user_id = mongoengine.StringField(max_length=30,required=True)
     state = mongoengine.StringField(
         max_length=10,
         choices=['PENDING', 'ABORTED', 'COMPLETED'],
