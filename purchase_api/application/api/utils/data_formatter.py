@@ -11,8 +11,9 @@ def build_purchase_json(purchase):
     purchases_dict["user_id"] = purchase["user_id"]
     purchases_dict["state"] = purchase["state"]
     purchases_dict["date"] = str(purchase["date"])
+    purchases_dict["value"] = str(purchase["value"])
     purchases_dict["purchased_products"] = purchase["purchased_products"]
-    purchases_dict["cart"] = str(purchase["cart"])
+    purchases_dict["cart"] = str(purchase["cart"]["id"])
     return purchases_dict
 
 

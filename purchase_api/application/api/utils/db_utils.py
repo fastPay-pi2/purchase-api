@@ -1,5 +1,5 @@
-from application.api.models.cart_model import CartModel
-from application.api.models.purchase_model import PurchaseModel
+# from application.api.models.cart_model import CartModel
+from application.api.models.purchase_model import PurchaseModel, CartModel
 from application.api.utils.data_formatter import build_cart_json, \
                                                  build_purchase_json
 import json
