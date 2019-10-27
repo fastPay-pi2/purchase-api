@@ -22,18 +22,18 @@ logging.basicConfig(
 
 def start_purchase(data):
     try:
-        validators.validate_rfid(data['cart_id'])
+        # validators.validate_rfid(data['cart_id'])
         cart = db_utils.get_doc_by_attr(CartModel, "rfid", data['cart_id'])
 
-        logging.debug(f'cart = {cart.to_json()}')
+        # logging.debug(f'cart = {cart.to_json()}')
 
         purchase = PurchaseModel()
         purchase.user_id = data['user_id']
         purchase.cart = cart
-        purchase.state = 'PENDING'
+        purchase.state = 'ONGOING'
         purchase.purchased_products = []
 
-        logging.debug(f'purchase = {purchase.to_json()}')
+        # logging.debug(f'purchase = {purchase.to_json()}')
 
         purchase_id = purchase.save()
 
@@ -46,33 +46,43 @@ def start_purchase(data):
         return {'err': str(err)}
 
 
-# TODO change logic to update searching a cart through list of RFIDS
-def update_purchase(data, purchase_id):
-    new_state = data['state']
-    for item in data['items']:
-        validators.validate_rfid(item)
-    product_items = {
-        "rfids": data["items"]
-    }
+def server_update_purchase(data):
+    carts = CartModel.objects.all()
+    cart_rfids = []
+    for cart in carts:
+        cart_rfids.append(str(cart['rfid']))
+
+    # TODO validate RFIDs
+    items = data['items']
+    cart_rfid = [x for x in items if x in cart_rfids]
+
+    if len(cart_rfid) == 1:
+        cart_rfid = cart_rfid[0]
+    elif len(cart_rfid) > 1:
+        raise Exception('More than 1 cart was found')
+    else:
+        raise Exception('It was not possible to find a cart')
+
+    # If it does not exist, db raises an exception
+    cart = CartModel.objects.get(rfid=cart_rfid)
+    purchase = PurchaseModel.objects(cart=cart, state='ONGOING')[0] # TODO change to get to take just 1
+
+    product_items = dict()
+    product_items['rfids'] = data['items']
+
     beautiful_item_url = PRODUCTS_API + f"beautifulitems"
     beautiful_items = get(beautiful_item_url, json=product_items).json()
     value = sum([x['productprice'] for x in beautiful_items])
 
-    UTC_OFFSET = 3
+    UTC_OFFSET = 3 # BRASÍLIA UTC
     time = datetime.now() - timedelta(hours=UTC_OFFSET)
 
-    # TODO update by user_id and state = PENDING
-    rows = PurchaseModel.objects(id=purchase_id).update(
-        set__state=new_state,
+    purchase.update(
+        set__state='PAYING',
         set__purchased_products=beautiful_items,
         set__date=time,
         set__value=value
     )
-
-    if rows <= 0:
-        raise Exception('Could not find the purchase')
-    elif rows > 1:
-        raise Exception('More than 1 id for purchase')
 
 
 def delete_purchase(purchase_id):

@@ -1,4 +1,11 @@
+import logging
 import re
+
+FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
+logging.basicConfig(
+    level=logging.DEBUG,
+    format=FORMAT
+)
 
 
 def validate_rfid(rfid):
@@ -20,3 +27,14 @@ def validate_fields(json, *args):
         if arg not in json:
             err.append(arg)
     return err
+
+def validate_state(state):
+    STATES = ['ONGOING', 'PAYING', 'COMPLETED', 'ABORTED']
+
+    logging.debug('State = {}'.format(state))
+
+    if state in STATES:
+        logging.debug('@@@ entrou no if')
+        return True
+    else:
+        return False

@@ -19,7 +19,7 @@ class PurchaseModel(mongoengine.Document):
     user_id = mongoengine.StringField(max_length=30, required=True)
     state = mongoengine.StringField(
         max_length=10,
-        choices=['PENDING', 'ABORTED', 'COMPLETED'],
+        choices=['ONGOING', 'PAYING', 'ABORTED', 'COMPLETED'],
         required=True
     )
     date = mongoengine.DateTimeField(default=None,

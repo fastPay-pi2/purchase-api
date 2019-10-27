@@ -8,7 +8,7 @@ from application.api.utils import (
     handlers
 )
 from application.api.controllers.purchase_controller import (
-    update_purchase, start_purchase, get_purchases, delete_purchase
+    server_update_purchase, start_purchase, get_purchases, delete_purchase
 )
 
 purchase_blueprint = Blueprint('views', __name__)
@@ -26,17 +26,17 @@ class Purchase(Resource):
         else:
             return start_purchase(data)
 
-    def put(self, purchase_id):
+    def put(self, user_id=None):
         data = request.get_json()
-        err = validators.validate_fields(data, 'state', 'items')
+        err = validators.validate_fields(data, 'state', 'user_id')
         if err:
             err = f'Fields are missing: {", ".join(err)}'
             return data_formatter.format_message(err, 400)
         else:
-            success_message = f"Purchase {purchase_id} successfully updated"
-            return handlers.handle_exceptions(update_purchase,
+            success_message = f"Purchase successfully updated"
+            return handlers.handle_exceptions(server_update_purchase,
                                               success_message,
-                                              data, purchase_id)
+                                              data)
 
     def get(self, user_id=None):
         purchases = get_purchases(user_id)
@@ -52,8 +52,11 @@ class Purchase(Resource):
 api.add_resource(Purchase, '/api/purchase/',
                  endpoint="purchase",
                  methods=['POST', 'GET'])
-api.add_resource(Purchase, '/api/purchase/<purchase_id>',
-                 endpoint="update_purchase",
+api.add_resource(Purchase, '/api/purchase/',
+                 endpoint="server_update_purchase",
+                 methods=['PUT'])
+api.add_resource(Purchase, '/api/purchase/<user_id>',
+                 endpoint="user_update_purchase",
                  methods=['PUT', 'DELETE'])
 api.add_resource(Purchase, '/api/userpurchases/<user_id>',
                  endpoint="list_user_purchases",
