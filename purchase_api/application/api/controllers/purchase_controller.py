@@ -10,6 +10,7 @@ from application.api.utils import (
 )
 
 PRODUCTS_API = os.getenv("PRODUCTS_API", "")
+BEAUTIFUL_ITEMS_URL = PRODUCTS_API + "beautifulitems"
 
 FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
 logging.basicConfig(
@@ -21,55 +22,40 @@ logging.basicConfig(
 
 
 def start_purchase(data):
-    # validators.validate_rfid(data['cart_id'])
-    rfid = data['rfid']
+    # TODO validate cart RFID format
+    rfid = data['cart_id']
     cart = CartModel.objects.get(rfid=rfid)
 
-    # logging.debug(f'cart = {cart.to_json()}')
-
+    err = check_cart_in_use(cart)
+    if err:
+        return data_formatter.format_message(err, 400)
+        
     purchase = PurchaseModel()
     purchase.user_id = data['user_id']
     purchase.cart = cart
     purchase.state = 'ONGOING'
     purchase.purchased_products = []
+    purchase.save()
 
-    # logging.debug(f'purchase = {purchase.to_json()}')
+    response = dict()
+    response['msg'] = f'Purchase for {purchase["user_id"]} successfully created'
+    response['id'] = str(purchase['id'])
 
-    purchase_id = purchase.save()
-
-    msg = f'Purchase for {purchase_id["user_id"]} successfully created'
-    return {
-        "msg": msg,
-        "id": f'{str(purchase_id["id"])}'
-    }, 200
+    return data_formatter.format_message(response, 200)
 
 
 def server_update_purchase(data):
-    carts = CartModel.objects.all()
-    cart_rfids = []
-    for cart in carts:
-        cart_rfids.append(str(cart['rfid']))
-
-    # TODO validate RFIDs
-    items = data['items']
-    cart_rfid = [x for x in items if x in cart_rfids]
-
-    if len(cart_rfid) == 1:
-        cart_rfid = cart_rfid[0]
-    elif len(cart_rfid) > 1:
-        raise Exception('More than 1 cart was found')
-    else:
-        raise Exception('It was not possible to find a cart')
+    items = data['items'] # TODO validate RFIDs
+    cart_rfid = identify_cart_from_items(items)
 
     # If it does not exist, db raises an exception
     cart = CartModel.objects.get(rfid=cart_rfid)
-    purchase = PurchaseModel.objects(cart=cart, state='ONGOING')[0] # TODO change to get to take just 1
+    purchase = PurchaseModel.objects.get(cart=cart, state='ONGOING')
 
     product_items = dict()
     product_items['rfids'] = data['items']
 
-    beautiful_item_url = PRODUCTS_API + f"beautifulitems"
-    beautiful_items = get(beautiful_item_url, json=product_items).json()
+    beautiful_items = get(BEAUTIFUL_ITEMS_URL, json=product_items).json()
     value = sum([x['productprice'] for x in beautiful_items])
 
     purchase.update(
@@ -116,3 +102,29 @@ def get_purchases(user_id):
     for p in purchases:
         response.append(data_formatter.build_purchase_json(p))
     return response
+
+
+def check_cart_in_use(cart):
+    used_carts = PurchaseModel.objects(state='ONGOING', cart=cart)
+    if used_carts:
+        err = 'Cart already being used in another purchase'
+        return err
+    else:
+        return None
+
+
+def identify_cart_from_items(items):
+    carts = CartModel.objects.all()
+    cart_rfids = []
+    for cart in carts:
+        cart_rfids.append(str(cart['rfid']))
+ 
+    cart_rfid = [x for x in items if x in cart_rfids]
+    if len(cart_rfid) == 1:
+        cart_rfid = cart_rfid[0]
+    elif len(cart_rfid) > 1:
+        raise Exception('More than 1 cart was found')
+    else:
+        raise Exception('It was not possible to find a cart')
+
+    return cart_rfid
