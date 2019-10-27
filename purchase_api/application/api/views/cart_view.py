@@ -1,5 +1,4 @@
-from application.api.models.purchase_model import CartModel
-# from application.api.models.cart_model import CartModel
+from application.api.models import CartModel
 from flask_restful import Resource, Api
 from flask import Blueprint, request
 from flask_cors import CORS

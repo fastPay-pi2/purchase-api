@@ -1,6 +1,4 @@
 from application.api import init_db
-# from application.api.models.cart_model import CartModel
-# from application.api.models.cart_model import CartModel
 import mongoengine
 
 

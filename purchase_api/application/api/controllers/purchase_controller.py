@@ -1,6 +1,4 @@
-from application.api.models.purchase_model import PurchaseModel
-from application.api.models.purchase_model import CartModel
-# from application.api.models.cart_model import CartModel
+from application.api.models import CartModel, PurchaseModel
 from datetime import datetime, timedelta
 from requests import get
 import logging
