@@ -78,12 +78,12 @@ def build_item_json(user_id, cart, state):
     """
     Build item json for post request.
     >>> Params:
-    user_id: Integer -> Indicate user id
+    user_id: String -> Indicate user id
     cart: String -> Indicate cart id
     state: String -> Indicate the purchase state
     """
     item_json = {
-        "user_id": user_id,
+        "user_id": str(user_id),
         "cart_id": cart,
         "state": state[0],
         "items": []
