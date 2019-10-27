@@ -27,7 +27,7 @@ def start_purchase(data):
 
     err = check_cart_in_use(cart)
     if err:
-        return data_formatter.format_message(err, 400)
+        return err, 400
 
     purchase = PurchaseModel()
     purchase.user_id = data['user_id']
@@ -42,7 +42,7 @@ def start_purchase(data):
     )
     response['id'] = str(purchase['id'])
 
-    return data_formatter.format_message(response, 200)
+    return response, 200
 
 
 def server_update_purchase(data):
@@ -65,8 +65,10 @@ def server_update_purchase(data):
         set__value=value
     )
 
-    msg = f'Purchase {str(purchase["id"])} sucssessfully updated'
-    return data_formatter.format_message(msg, 200)
+    logging.debug('entrou aqui')
+    response = f'Purchase {str(purchase["id"])} sucssessfully updated'
+    logging.debug('entrou aqui 2')
+    return response, 200
 
 
 def user_update_purchase(data, user_id):
@@ -83,10 +85,10 @@ def user_update_purchase(data, user_id):
             set__state=new_state,
             set__date=time
         )
-        msg = f'Purchase {str(purchase["id"])} sucssessfully updated'
-        return data_formatter.format_message(msg, 200)
+        response = f'Purchase {str(purchase["id"])} sucssessfully updated'
+        return response, 200
     else:
-        return data_formatter.format_message('Invalid state', 400)
+        return 'Invalid state', 400
 
 
 def delete_purchase(user_id):
@@ -94,20 +96,22 @@ def delete_purchase(user_id):
     for p in purchases:
         p.delete()
 
-    msg = f'Purchases for the user {user_id} successfully deleted'
-    return data_formatter.format_message(msg, 200)
+    response = f'Purchases for the user {user_id} successfully deleted'
+    return response, 200
 
 
 def get_purchases(user_id):
     if user_id:
         purchases = PurchaseModel.objects(user_id=user_id)
+        if not purchases:
+            return 'There are no purchases for user', 404
     else:
         purchases = PurchaseModel.objects
 
     response = []
     for p in purchases:
         response.append(data_formatter.build_purchase_json(p))
-    return response
+    return response, 200
 
 
 def check_cart_in_use(cart):

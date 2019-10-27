@@ -29,7 +29,8 @@ class Purchase(Resource):
             err = f'Fields are missing: {", ".join(err)}'
             return data_formatter.format_message(err, 400)
         else:
-            return start_purchase(data)
+            response, status = start_purchase(data)
+            return data_formatter.format_message(response, status)
 
     @decorators.handle_exceptions
     def put(self, user_id=None):
@@ -37,12 +38,13 @@ class Purchase(Resource):
 
         # endpoint for the user
         if user_id:
-            err = validators.validate_fields(data, 'state')
+            err = validators.validate_fields(data, 'new_state')
             if err:
                 err = f'Fields are missing: {", ".join(err)}'
                 return data_formatter.format_message(err, 400)
             else:
-                return user_update_purchase(data, user_id)
+                response, status = user_update_purchase(data, user_id)
+                return data_formatter.format_message(response, status)
         # endpoint for the server
         else:
             err = validators.validate_fields(data, 'items')
@@ -50,17 +52,18 @@ class Purchase(Resource):
                 err = f'Fields are missing: {", ".join(err)}'
                 return data_formatter.format_message(err, 400)
             else:
-                return server_update_purchase(data)
+                response, status = server_update_purchase(data)
+                return data_formatter.format_message(response, status)
 
     @decorators.handle_exceptions
     def get(self, user_id=None):
-        purchases = get_purchases(user_id)
-        return purchases, 200
+        response, status = get_purchases(user_id)
+        return data_formatter.format_message(response, status)
 
     @decorators.handle_exceptions
     def delete(self, user_id):
-
-        return delete_purchase(user_id)
+        response, status = delete_purchase(user_id)
+        return data_formatter.format_message(response, status)
 
 
 api.add_resource(Purchase, '/api/purchase/',
