@@ -21,29 +21,27 @@ logging.basicConfig(
 
 
 def start_purchase(data):
-    try:
-        # validators.validate_rfid(data['cart_id'])
-        cart = db_utils.get_doc_by_attr(CartModel, "rfid", data['cart_id'])
+    # validators.validate_rfid(data['cart_id'])
+    rfid = data['rfid']
+    cart = CartModel.objects.get(rfid=rfid)
 
-        # logging.debug(f'cart = {cart.to_json()}')
+    # logging.debug(f'cart = {cart.to_json()}')
 
-        purchase = PurchaseModel()
-        purchase.user_id = data['user_id']
-        purchase.cart = cart
-        purchase.state = 'ONGOING'
-        purchase.purchased_products = []
+    purchase = PurchaseModel()
+    purchase.user_id = data['user_id']
+    purchase.cart = cart
+    purchase.state = 'ONGOING'
+    purchase.purchased_products = []
 
-        # logging.debug(f'purchase = {purchase.to_json()}')
+    # logging.debug(f'purchase = {purchase.to_json()}')
 
-        purchase_id = purchase.save()
+    purchase_id = purchase.save()
 
-        msg = f'Purchase for {purchase_id["user_id"]} successfully created'
-        return {
-            "msg": msg,
-            "id": f'{str(purchase_id["id"])}'
-        }, 200
-    except Exception as err:
-        return {'err': str(err)}
+    msg = f'Purchase for {purchase_id["user_id"]} successfully created'
+    return {
+        "msg": msg,
+        "id": f'{str(purchase_id["id"])}'
+    }, 200
 
 
 def server_update_purchase(data):
@@ -74,16 +72,34 @@ def server_update_purchase(data):
     beautiful_items = get(beautiful_item_url, json=product_items).json()
     value = sum([x['productprice'] for x in beautiful_items])
 
-    UTC_OFFSET = 3 # BRASÍLIA UTC
-    time = datetime.now() - timedelta(hours=UTC_OFFSET)
-
     purchase.update(
         set__state='PAYING',
         set__purchased_products=beautiful_items,
-        set__date=time,
         set__value=value
     )
 
+    msg = f'Purchase {str(purchase["id"])} sucssessfully updated'
+    return data_formatter.format_message(msg, 200)
+
+
+def user_update_purchase(data, user_id):
+    purchase = PurchaseModel.objects.get(user_id=user_id, state='PAYING')
+    
+    UTC_OFFSET = 3 # BRASÍLIA UTC
+    time = datetime.now() - timedelta(hours=UTC_OFFSET)
+
+    new_state = data['new_state']
+    is_valid = validators.validate_state(new_state)
+
+    if is_valid:
+        purchase.update(
+            set__state=new_state,
+            set__date=time
+        )
+        msg = f'Purchase {str(purchase["id"])} sucssessfully updated'
+        return data_formatter.format_message(msg, 200)
+    else:
+        return data_formatter.format_message('Invalid state', 400)
 
 def delete_purchase(purchase_id):
     purchase = db_utils.get_doc_by_attr(PurchaseModel, "id", purchase_id)

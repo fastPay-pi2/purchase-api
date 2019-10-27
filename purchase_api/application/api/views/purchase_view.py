@@ -5,10 +5,11 @@ from flask_cors import CORS
 from application.api.utils import (
     validators,
     data_formatter,
-    handlers
+    handlers,
+    decorators
 )
 from application.api.controllers.purchase_controller import (
-    server_update_purchase, start_purchase, get_purchases, delete_purchase
+    user_update_purchase, server_update_purchase, start_purchase, get_purchases, delete_purchase
 )
 
 purchase_blueprint = Blueprint('views', __name__)
@@ -17,6 +18,7 @@ CORS(purchase_blueprint)
 
 
 class Purchase(Resource):
+    @decorators.handle_exceptions
     def post(self):
         data = request.get_json()
         err = validators.validate_fields(data, 'user_id', 'cart_id')
@@ -26,18 +28,28 @@ class Purchase(Resource):
         else:
             return start_purchase(data)
 
+    @decorators.handle_exceptions
     def put(self, user_id=None):
         data = request.get_json()
-        err = validators.validate_fields(data, 'state', 'user_id')
-        if err:
-            err = f'Fields are missing: {", ".join(err)}'
-            return data_formatter.format_message(err, 400)
-        else:
-            success_message = f"Purchase successfully updated"
-            return handlers.handle_exceptions(server_update_purchase,
-                                              success_message,
-                                              data)
 
+        # endpoint for the user
+        if user_id:
+            err = validators.validate_fields(data, 'state')
+            if err:
+                err = f'Fields are missing: {", ".join(err)}'
+                return data_formatter.format_message(err, 400)
+            else:
+                return user_update_purchase(data, user_id)
+        # endpoint for the server
+        else:
+            err = validators.validate_fields(data, 'items')
+            if err:
+                err = f'Fields are missing: {", ".join(err)}'
+                return data_formatter.format_message(err, 400)
+            else:
+                return server_update_purchase(data)
+
+    @decorators.handle_exceptions
     def get(self, user_id=None):
         purchases = get_purchases(user_id)
         return purchases, 200
