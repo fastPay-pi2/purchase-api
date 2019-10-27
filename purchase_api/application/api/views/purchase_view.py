@@ -3,13 +3,16 @@ from flask import Blueprint, request
 from flask_cors import CORS
 
 from application.api.utils import (
-    validators,
     data_formatter,
-    handlers,
+    validators,
     decorators
 )
 from application.api.controllers.purchase_controller import (
-    user_update_purchase, server_update_purchase, start_purchase, get_purchases, delete_purchase
+    server_update_purchase,
+    user_update_purchase,
+    delete_purchase,
+    start_purchase,
+    get_purchases
 )
 
 purchase_blueprint = Blueprint('views', __name__)
@@ -54,11 +57,10 @@ class Purchase(Resource):
         purchases = get_purchases(user_id)
         return purchases, 200
 
-    def delete(self, purchase_id):
-        success_message = f'Purchase {purchase_id} successfully removed'
+    @decorators.handle_exceptions
+    def delete(self, user_id):
 
-        return handlers.handle_exceptions(delete_purchase, success_message,
-                                          str(purchase_id))
+        return delete_purchase(user_id)
 
 
 api.add_resource(Purchase, '/api/purchase/',
@@ -69,7 +71,7 @@ api.add_resource(Purchase, '/api/purchase/',
                  methods=['PUT'])
 api.add_resource(Purchase, '/api/purchase/<user_id>',
                  endpoint="user_update_purchase",
-                 methods=['PUT', 'DELETE'])
+                 methods=['PUT'])
 api.add_resource(Purchase, '/api/userpurchases/<user_id>',
                  endpoint="list_user_purchases",
-                 methods=['GET'])
+                 methods=['GET', 'DELETE'])

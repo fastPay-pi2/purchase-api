@@ -4,7 +4,6 @@ from requests import get
 import logging
 import os
 from application.api.utils import (
-    db_utils,
     validators,
     data_formatter
 )
@@ -29,7 +28,7 @@ def start_purchase(data):
     err = check_cart_in_use(cart)
     if err:
         return data_formatter.format_message(err, 400)
-        
+
     purchase = PurchaseModel()
     purchase.user_id = data['user_id']
     purchase.cart = cart
@@ -38,14 +37,16 @@ def start_purchase(data):
     purchase.save()
 
     response = dict()
-    response['msg'] = f'Purchase for {purchase["user_id"]} successfully created'
+    response['msg'] = 'Purchase for {} successfully created'.format(
+        purchase["user_id"]
+    )
     response['id'] = str(purchase['id'])
 
     return data_formatter.format_message(response, 200)
 
 
 def server_update_purchase(data):
-    items = data['items'] # TODO validate RFIDs
+    items = data['items']  # TODO validate RFIDs
     cart_rfid = identify_cart_from_items(items)
 
     # If it does not exist, db raises an exception
@@ -70,8 +71,8 @@ def server_update_purchase(data):
 
 def user_update_purchase(data, user_id):
     purchase = PurchaseModel.objects.get(user_id=user_id, state='PAYING')
-    
-    UTC_OFFSET = 3 # BRASÍLIA UTC
+
+    UTC_OFFSET = 3  # BRASÍLIA UTC
     time = datetime.now() - timedelta(hours=UTC_OFFSET)
 
     new_state = data['new_state']
@@ -87,9 +88,14 @@ def user_update_purchase(data, user_id):
     else:
         return data_formatter.format_message('Invalid state', 400)
 
-def delete_purchase(purchase_id):
-    purchase = db_utils.get_doc_by_attr(PurchaseModel, "id", purchase_id)
-    purchase.delete()
+
+def delete_purchase(user_id):
+    purchases = PurchaseModel.objects(user_id=user_id)
+    for p in purchases:
+        p.delete()
+
+    msg = f'Purchases for the user {user_id} successfully deleted'
+    return data_formatter.format_message(msg, 200)
 
 
 def get_purchases(user_id):
@@ -118,7 +124,7 @@ def identify_cart_from_items(items):
     cart_rfids = []
     for cart in carts:
         cart_rfids.append(str(cart['rfid']))
- 
+
     cart_rfid = [x for x in items if x in cart_rfids]
     if len(cart_rfid) == 1:
         cart_rfid = cart_rfid[0]

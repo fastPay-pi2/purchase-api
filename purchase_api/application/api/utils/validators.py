@@ -28,6 +28,7 @@ def validate_fields(json, *args):
             err.append(arg)
     return err
 
+
 def validate_state(state):
     STATES = ['ONGOING', 'PAYING', 'COMPLETED', 'ABORTED']
 
