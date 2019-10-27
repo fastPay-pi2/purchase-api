@@ -18,7 +18,7 @@ def build_purchase_json(purchase):
 
 
 def format_message(message, status=500):
-    if isinstance(message, dict):
+    if isinstance(message, dict) or isinstance(message, list):
         return message, status
 
     if status == 200:

@@ -3,6 +3,8 @@ from application.api.utils.data_formatter import format_message
 from mongoengine.errors import DoesNotExist, NotUniqueError
 
 
+# TODO all methods should return msg, status and
+# the format message method should be called here
 def handle_exceptions(func):
     wraps(func)
 
