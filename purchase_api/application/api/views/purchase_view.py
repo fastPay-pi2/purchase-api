@@ -3,7 +3,6 @@ from flask import Blueprint, request
 from flask_cors import CORS
 
 from application.api.utils import (
-    data_formatter,
     validators,
     decorators
 )
@@ -27,10 +26,10 @@ class Purchase(Resource):
         err = validators.validate_fields(data, 'user_id', 'cart_id')
         if err:
             err = f'Fields are missing: {", ".join(err)}'
-            return data_formatter.format_message(err, 400)
+            return err, 400
         else:
             response, status = start_purchase(data)
-            return data_formatter.format_message(response, status)
+            return response, status
 
     @decorators.handle_exceptions
     def put(self, user_id=None):
@@ -41,29 +40,29 @@ class Purchase(Resource):
             err = validators.validate_fields(data, 'new_state')
             if err:
                 err = f'Fields are missing: {", ".join(err)}'
-                return data_formatter.format_message(err, 400)
+                return err, 400
             else:
                 response, status = user_update_purchase(data, user_id)
-                return data_formatter.format_message(response, status)
+                return response, status
         # endpoint for the server
         else:
             err = validators.validate_fields(data, 'items')
             if err:
                 err = f'Fields are missing: {", ".join(err)}'
-                return data_formatter.format_message(err, 400)
+                return err, 400
             else:
                 response, status = server_update_purchase(data)
-                return data_formatter.format_message(response, status)
+                return response, status
 
     @decorators.handle_exceptions
     def get(self, user_id=None):
         response, status = get_purchases(user_id)
-        return data_formatter.format_message(response, status)
+        return response, status
 
     @decorators.handle_exceptions
     def delete(self, user_id):
         response, status = delete_purchase(user_id)
-        return data_formatter.format_message(response, status)
+        return response, status
 
 
 api.add_resource(Purchase, '/api/purchase/',

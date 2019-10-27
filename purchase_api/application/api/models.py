@@ -6,7 +6,7 @@ class CartModel(mongoengine.Document):
     init_db()
     # purchase = mongoengine.ReferenceField(PurchaseModel)
     rfid = mongoengine.StringField(required=True,
-                                   max_length=20,
+                                   max_length=40,
                                    unique=True)
     meta = {
         'db_alias': 'purchase',

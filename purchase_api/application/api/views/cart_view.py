@@ -6,8 +6,7 @@ from application.api.controllers.cart_controller import (
     save_cart, update_cart, delete_cart, get_carts
 )
 from application.api.utils import (
-    decorators,
-    data_formatter
+    decorators
 )
 
 cart_blueprint = Blueprint('cart_view', __name__)
@@ -19,35 +18,34 @@ class Cart(Resource):
     @decorators.handle_exceptions
     def get(self, rfid=None):
         carts, status = get_carts(rfid)
-        return data_formatter.format_message(carts, status)
+        return carts, status
 
     @decorators.handle_exceptions
     def post(self):
         post_data = request.get_json()
         if 'rfid' in post_data:
             rfid = post_data['rfid']
-            msg, status = save_cart(rfid)
-            return data_formatter.format_message(msg, status)
+            response, status = save_cart(rfid)
+            return response, status
         else:
             err = 'RFID is missing'
-            return data_formatter.format_message(err, 400)
+            return err, 400
 
     @decorators.handle_exceptions
     def put(self, rfid):
         post_data = request.get_json()
         if 'new_rfid' in post_data:
             new_rfid = post_data['new_rfid']
-            msg, status = update_cart(rfid, new_rfid)
-            return data_formatter.format_message(msg, status)
+            response, status = update_cart(rfid, new_rfid)
+            return response, status
         else:
             err = 'New RFID is missing'
-            return data_formatter.format_message(err, 400)
+            return err, 400
 
     @decorators.handle_exceptions
     def delete(self, rfid):
-        msg, status = delete_cart(rfid)
-
-        return data_formatter.format_message(msg, status)
+        response, status = delete_cart(rfid)
+        return response, status
 
 
 api.add_resource(Cart, '/api/cart/<rfid>',

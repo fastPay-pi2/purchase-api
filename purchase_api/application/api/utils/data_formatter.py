@@ -13,6 +13,7 @@ def build_purchase_json(purchase):
     purchases_dict["date"] = str(purchase["date"])
     purchases_dict["value"] = str(purchase["value"])
     purchases_dict["purchased_products"] = purchase["purchased_products"]
+    # TODO bug when access cart id of a deleted cart
     purchases_dict["cart"] = str(purchase["cart"]["id"])
     return purchases_dict
 
