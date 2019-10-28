@@ -31,7 +31,7 @@ def start_purchase(data):
 
     purchase = PurchaseModel()
     purchase.user_id = data['user_id']
-    purchase.cart = cart
+    purchase.cart = cart['id']
     purchase.state = 'ONGOING'
     purchase.purchased_products = []
     purchase.save()
@@ -51,7 +51,7 @@ def server_update_purchase(data):
 
     # If it does not exist, db raises an exception
     cart = CartModel.objects.get(rfid=cart_rfid)
-    purchase = PurchaseModel.objects.get(cart=cart, state='ONGOING')
+    purchase = PurchaseModel.objects.get(cart=cart['id'], state='ONGOING')
 
     product_items = dict()
     product_items['rfids'] = data['items']
@@ -115,7 +115,7 @@ def get_purchases(user_id):
 
 
 def check_cart_in_use(cart):
-    used_carts = PurchaseModel.objects(state='ONGOING', cart=cart)
+    used_carts = PurchaseModel.objects(state='ONGOING', cart=cart['id'])
     if used_carts:
         err = 'Cart already being used in another purchase'
         return err
@@ -132,6 +132,7 @@ def identify_cart_from_items(items):
     cart_rfid = [x for x in items if x in cart_rfids]
     if len(cart_rfid) == 1:
         cart_rfid = cart_rfid[0]
+        items.remove(cart_rfid)
     elif len(cart_rfid) > 1:
         raise Exception('More than 1 cart was found')
     else:

@@ -8,13 +8,13 @@ def build_cart_json(cart):
 def build_purchase_json(purchase):
     purchases_dict = dict()
     purchases_dict["_id"] = str(purchase["id"])
-    purchases_dict["user_id"] = purchase["user_id"]
+    purchases_dict["user_id"] = str(purchase["user_id"])
     purchases_dict["state"] = purchase["state"]
     purchases_dict["date"] = str(purchase["date"])
     purchases_dict["value"] = str(purchase["value"])
     purchases_dict["purchased_products"] = purchase["purchased_products"]
     # TODO bug when access cart id of a deleted cart
-    purchases_dict["cart"] = str(purchase["cart"]["id"])
+    purchases_dict["cart"] = str(purchase["cart"])
     return purchases_dict
 
 

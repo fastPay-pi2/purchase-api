@@ -21,6 +21,6 @@ def handle_exceptions(func):
         except DoesNotExist as err:
             return format_message(str(err), 404)
         except Exception as err:
-            return format_message(str(err), 500)
+            return format_message(str(err), 400)
 
     return wrapped_func

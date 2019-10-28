@@ -4,7 +4,6 @@ import mongoengine
 
 class CartModel(mongoengine.Document):
     init_db()
-    # purchase = mongoengine.ReferenceField(PurchaseModel)
     rfid = mongoengine.StringField(required=True,
                                    max_length=40,
                                    unique=True)
@@ -16,7 +15,7 @@ class CartModel(mongoengine.Document):
 
 class PurchaseModel(mongoengine.Document):
     init_db()
-    user_id = mongoengine.StringField(max_length=30, required=True)
+    user_id = mongoengine.ObjectIdField(required=True)
     state = mongoengine.StringField(
         max_length=10,
         choices=['ONGOING', 'PAYING', 'ABORTED', 'COMPLETED'],
@@ -26,7 +25,7 @@ class PurchaseModel(mongoengine.Document):
                                      required=False)
     purchased_products = mongoengine.ListField(mongoengine.DictField(),
                                                required=False)
-    cart = mongoengine.ReferenceField(CartModel, required=True)
+    cart = mongoengine.ObjectIdField(required=True)
     value = mongoengine.FloatField(default=0, min_value=0,
                                    required=False)
     meta = {
