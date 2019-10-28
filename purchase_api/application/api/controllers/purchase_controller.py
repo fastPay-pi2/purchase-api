@@ -25,6 +25,10 @@ def start_purchase(data):
     rfid = data['cart_id']
     cart = CartModel.objects.get(rfid=rfid)
 
+    err = check_pending_purchase(data['user_id'])
+    if err:
+        return err, 400
+
     err = check_cart_in_use(cart)
     if err:
         return err, 400
@@ -112,6 +116,17 @@ def get_purchases(user_id):
     for p in purchases:
         response.append(data_formatter.build_purchase_json(p))
     return response, 200
+
+
+def check_pending_purchase(user_id):
+    user_purchases = PurchaseModel.objects(user_id=user_id)
+    states = ['ONGOING', 'PAYING']  # Pending states
+    pending_purchases = [x for x in user_purchases if x['state'] in states]
+    if pending_purchases:
+        err = 'There is a pending purchase'
+        return err
+    else:
+        return None
 
 
 def check_cart_in_use(cart):
