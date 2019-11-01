@@ -33,7 +33,7 @@ def create_carts(carts_number, carts_list, table):
     rfids_list: List of Strings -> List with rfids in accepted format
     table: String -> Indicate table name. Should be passed 'item'
     """
-    for i in range(1, carts_number + 1):
+    for i in range(0, carts_number):
         try:
             cart_json = build_cart_json(carts_list[i])
             requests.post(f'{PURCHASE_API_URL}/{table}/', json=cart_json)
