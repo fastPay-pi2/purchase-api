@@ -61,11 +61,32 @@ def server_update_purchase(data):
     product_items['rfids'] = data['items']
 
     beautiful_items = get(BEAUTIFUL_ITEMS_URL, json=product_items).json()
+
     value = sum([x['productprice'] for x in beautiful_items])
+
+    temp = {}
+    temp2 = []
+    for i in beautiful_items:
+        rfid = i['rfid']
+        productId = i['productid']
+        if not productId in temp:
+            del i['rfid']
+            temp[productId] = i
+        if 'rfids' in temp[productId]:
+            temp[productId]['rfids'] = temp[productId]['rfids'] + [rfid]
+        else:
+            temp[productId]['rfids'] = [rfid]
+        if 'qntd' in temp[productId]:
+            temp[productId]['qntd'] += 1
+        else:
+            temp[productId]['qntd'] = 1
+
+    for product in temp.values():
+        temp2.append(product)
 
     purchase.update(
         set__state='PAYING',
-        set__purchased_products=beautiful_items,
+        set__purchased_products=temp2,
         set__value=value
     )
 
@@ -76,6 +97,7 @@ def server_update_purchase(data):
 
 
 def user_update_purchase(data, user_id):
+
     purchase = PurchaseModel.objects.get(user_id=user_id, state='PAYING')
 
     UTC_OFFSET = 3  # BRASÍLIA UTC
