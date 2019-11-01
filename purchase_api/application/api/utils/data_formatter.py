@@ -28,3 +28,27 @@ def format_message(message, status=500):
         message = {'error': message}
 
     return message, status
+
+
+def items_to_products(items):
+    '''
+    Receives a list of repeated items and returns
+    a list of products with the quantity of items
+    '''
+
+    products_ids = dict()  # key = productid, value = quantity
+    products = []
+    for i in items:
+        if i['productid'] in products_ids.keys():
+            products_ids[i['productid']].append(i['rfid'])
+        else:
+            products_ids[i['productid']] = [i['rfid']]
+            products.append(i)
+    for i in products:
+        if 'rfid' in i:
+            del i['rfid']
+
+        i['rfids'] = products_ids[i['productid']]
+        i['quantity'] = len(products_ids[i['productid']])
+
+    return products

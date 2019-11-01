@@ -61,19 +61,8 @@ def server_update_purchase(data):
     product_items['rfids'] = data['items']
 
     beautiful_items = get(BEAUTIFUL_ITEMS_URL, json=product_items).json()
-
+    products = data_formatter.items_to_products(beautiful_items)
     value = sum([x['productprice'] for x in beautiful_items])
-
-    products_ids = dict()  # key = productid, value = quantity
-    products = []
-    for i in beautiful_items:
-        if i['productid'] in products_ids.keys():
-            products_ids[i['productid']] += 1
-        else:
-            products_ids[i['productid']] = 1
-            products.append(i)
-    for i in products:
-        i['quantity'] = products_ids[i['productid']]
 
     purchase.update(
         set__state='PAYING',
@@ -81,7 +70,7 @@ def server_update_purchase(data):
         set__value=value
     )
 
-    response = f'Purchase {str(purchase["id"])} sucssessfully updated'
+    response = f'Purchase {str(purchase["id"])} successfully updated'
     return response, 200
 
 
@@ -135,6 +124,37 @@ def get_purchases(user_id):
     for p in purchases:
         response.append(data_formatter.build_purchase_json(p))
     return response, 200
+
+
+def purchase_dump(user_id):
+    if user_id:
+        return get_user_purchases_status(user_id)
+
+    purchases = PurchaseModel.objects()
+    user_ids = set([x['user_id'] for x in purchases])
+
+    raise Exception(user_ids)
+
+
+def get_user_purchases_status(user_id):
+    user_purchases = PurchaseModel.objects(user_id=user_id)
+    if not user_purchases:
+        return 'There are no purchases for user', 404
+
+    all_products = []
+    for i in user_purchases:
+        if i['state'] == 'COMPLETED':
+            all_products += i['purchased_products']
+
+    purchased_products = dict()  # key=productname, value=list of products
+    for i in all_products:
+        product_name = i['productname']
+        if product_name in purchased_products.keys():
+            purchased_products[product_name]['quantity'] += i['quantity']
+        else:
+            purchased_products[product_name] = i
+
+    return purchased_products, 200
 
 
 def check_pending_purchase(user_id):
