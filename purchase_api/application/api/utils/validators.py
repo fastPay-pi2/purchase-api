@@ -30,12 +30,11 @@ def validate_fields(json, *args):
 
 
 def validate_state(state):
-    STATES = ['ONGOING', 'PAYING', 'COMPLETED', 'ABORTED']
+    STATES = ['COMPLETED', 'ABORTED']
 
     logging.debug('State = {}'.format(state))
 
     if state in STATES:
-        logging.debug('@@@ entrou no if')
         return True
     else:
         return False

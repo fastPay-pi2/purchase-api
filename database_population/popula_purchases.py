@@ -66,6 +66,25 @@ def generate_rfids_list(items_number, cart=False):
     return rfids_list
 
 
+def generate_user_id_list(items_number):
+    """
+    Create rfids list in accepted format
+    >>> Params:
+    items_number: Integer -> number of products in database
+    """
+    allowed_numbers = list(range(2, 10))
+
+    allowed_numbers_str = [str(number) for number in allowed_numbers]
+
+    # lowercase a - z indexes
+    allowed_characters = list(map(chr, range(97, 103)))
+    allowed_digits = allowed_numbers_str + allowed_characters
+    user_id_list = list(map(''.join, itertools.islice(
+                                     itertools.combinations_with_replacement(
+                                       allowed_digits, 24), items_number + 1)))
+    return user_id_list
+
+
 def return_random_items(random_range, rfids_list, items_number):
     items = []
     items_indexes = random.sample(range(1, items_number), random_range)
@@ -85,21 +104,24 @@ def build_item_json(user_id, cart, state):
     item_json = {
         "user_id": str(user_id),
         "cart_id": cart,
-        "state": state[0],
+        "state": state,
         "items": []
     }
     return item_json
 
 
-def create_items(items_number, rfids_list, carts_list, carts_number, table):
+def create_items(items_number, rfids_list, carts_list,
+                 user_id_list, carts_number, table):
     """
     Create items in database
     >>> Params:
     items_number: Integer -> number of items in database
     rfids_list: List of Strings -> List with rfids in accepted format
+    user_id_list: List of Strings -> List with user_ids in accepted format
     carts_list: List of Strings -> List of carts id
     table: String -> Indicate table name. Should be passed 'purchase'
     """
+    cart_index = 0
     for i in range(1, items_number + 1):
         try:
             user_items_number = 40
@@ -109,20 +131,32 @@ def create_items(items_number, rfids_list, carts_list, carts_number, table):
             user_items = return_random_items(random_range,
                                              rfids_list,
                                              items_number)
-            state = random.choices(population=['ABORTED', 'FINISHED'],
-                                   weights=[0.1, 0.9], k=1)
-            random_cart = random.randint(1, carts_number)
-            logging.info(random_cart)
-            item_json = build_item_json(i,
-                                        carts_list[random_cart],
-                                        state)
-            post_req = requests.post(f'{PURCHASE_API_URL}/{table}/',
-                                     json=item_json)
-            purchase_id = post_req.json()
-            item_json["items"] = user_items
+
+            if cart_index > 29:
+                cart_index = 0
+
+            post_json = {
+                "user_id": user_id_list[i],
+                "cart_id": carts_list[cart_index]
+            }
+            requests.post(f'{PURCHASE_API_URL}/{table}/',
+                          json=post_json)
+            user_items.append(carts_list[cart_index])
+
+            server_put_json = {
+                "items": user_items
+            }
             requests.put(f'{PURCHASE_API_URL}/'
-                         f'{table}/{purchase_id["id"]}',
-                         json=item_json)
+                         f'{table}/',
+                         json=server_put_json)
+
+            state_json = {
+                "new_state": "COMPLETED"
+            }
+            requests.put(f'{PURCHASE_API_URL}/'
+                         f'{table}/{user_id_list[i]}',
+                         json=state_json)
+            cart_index += 1
             logging.info(f'{table.upper()} successfully added')
         except Exception as ex:
             # logging.error(f'An unmapped exception occured')
@@ -137,8 +171,9 @@ def main():
     carts_number = 30
     carts_list = generate_rfids_list(carts_number, True)
 
+    user_id_list = generate_user_id_list(items_number)
     create_items(items_number, rfids_list, carts_list,
-                 carts_number, "purchase")
+                 user_id_list, carts_number, "purchase")
 
 
 if __name__ == '__main__':

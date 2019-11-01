@@ -61,38 +61,46 @@ def server_update_purchase(data):
     product_items['rfids'] = data['items']
 
     beautiful_items = get(BEAUTIFUL_ITEMS_URL, json=product_items).json()
+    products = data_formatter.items_to_products(beautiful_items)
     value = sum([x['productprice'] for x in beautiful_items])
 
     purchase.update(
         set__state='PAYING',
-        set__purchased_products=beautiful_items,
+        set__purchased_products=products,
         set__value=value
     )
 
-    logging.debug('entrou aqui')
-    response = f'Purchase {str(purchase["id"])} sucssessfully updated'
-    logging.debug('entrou aqui 2')
+    response = f'Purchase {str(purchase["id"])} successfully updated'
     return response, 200
 
 
 def user_update_purchase(data, user_id):
-    purchase = PurchaseModel.objects.get(user_id=user_id, state='PAYING')
+    new_state = data['new_state']
+    is_valid = validators.validate_state(new_state)
+    if is_valid:
+        purchase = PurchaseModel.objects.filter(
+            user_id=user_id,
+            state__in=['ONGOING', 'PAYING']
+        )
+    else:
+        return 'Invalid state', 400
+
+    if len(purchase) == 1:
+        purchase = purchase[0]
+    elif len(purchase) > 1:
+        return 'More than 1 purchase found for user', 400
+    elif len(purchase) == 0:
+        return 'It was not possible to find a purchase for user id', 404
 
     UTC_OFFSET = 3  # BRASÍLIA UTC
     time = datetime.now() - timedelta(hours=UTC_OFFSET)
 
-    new_state = data['new_state']
-    is_valid = validators.validate_state(new_state)
-
-    if is_valid:
-        purchase.update(
-            set__state=new_state,
-            set__date=time
-        )
-        response = f'Purchase {str(purchase["id"])} sucssessfully updated'
-        return response, 200
-    else:
-        return 'Invalid state', 400
+    purchase.update(
+        set__state=new_state,
+        set__date=time
+    )
+    response = f'Purchase {str(purchase["id"])} successfully updated'
+    return response, 200
 
 
 def delete_purchase(user_id):
@@ -116,6 +124,37 @@ def get_purchases(user_id):
     for p in purchases:
         response.append(data_formatter.build_purchase_json(p))
     return response, 200
+
+
+def purchase_dump(user_id):
+    if user_id:
+        return get_user_purchases_status(user_id)
+
+    purchases = PurchaseModel.objects()
+    user_ids = set([x['user_id'] for x in purchases])
+
+    raise Exception(user_ids)
+
+
+def get_user_purchases_status(user_id):
+    user_purchases = PurchaseModel.objects(user_id=user_id)
+    if not user_purchases:
+        return 'There are no purchases for user', 404
+
+    all_products = []
+    for i in user_purchases:
+        if i['state'] == 'COMPLETED':
+            all_products += i['purchased_products']
+
+    purchased_products = dict()  # key=productname, value=list of products
+    for i in all_products:
+        product_name = i['productname']
+        if product_name in purchased_products.keys():
+            purchased_products[product_name]['quantity'] += i['quantity']
+        else:
+            purchased_products[product_name] = i
+
+    return purchased_products, 200
 
 
 def check_pending_purchase(user_id):

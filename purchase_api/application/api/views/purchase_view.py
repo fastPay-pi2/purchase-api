@@ -11,7 +11,8 @@ from application.api.controllers.purchase_controller import (
     user_update_purchase,
     delete_purchase,
     start_purchase,
-    get_purchases
+    get_purchases,
+    purchase_dump
 )
 
 purchase_blueprint = Blueprint('views', __name__)
@@ -65,6 +66,13 @@ class Purchase(Resource):
         return response, status
 
 
+class PurchaseDump(Resource):
+    @decorators.handle_exceptions
+    def get(self, user_id=None):
+        response, status = purchase_dump(user_id)
+        return response, status
+
+
 api.add_resource(Purchase, '/api/purchase/',
                  endpoint="purchase",
                  methods=['POST', 'GET'])
@@ -77,3 +85,10 @@ api.add_resource(Purchase, '/api/purchase/<user_id>',
 api.add_resource(Purchase, '/api/userpurchases/<user_id>',
                  endpoint="list_user_purchases",
                  methods=['GET', 'DELETE'])
+
+api.add_resource(PurchaseDump, '/api/purchasedump/',
+                 endpoint="purchase_dump",
+                 methods=['GET'])
+api.add_resource(PurchaseDump, '/api/purchasedump/<user_id>',
+                 endpoint="user_purchase_dump",
+                 methods=['GET'])
