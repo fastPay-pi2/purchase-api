@@ -86,24 +86,32 @@ def server_update_purchase(data):
 
 
 def user_update_purchase(data, user_id):
+    new_state = data['new_state']
+    is_valid = validators.validate_state(new_state)
+    if is_valid:
+        purchase = PurchaseModel.objects.filter(
+            user_id=user_id,
+            state__in=['ONGOING', 'PAYING']
+        )
+    else:
+        return 'Invalid state', 400
 
-    purchase = PurchaseModel.objects.get(user_id=user_id, state='PAYING')
+    if len(purchase) == 1:
+        purchase = purchase[0]
+    elif len(purchase) > 1:
+        return 'More than 1 purchase found for user', 400
+    elif len(purchase) == 0:
+        return 'It was not possible to find a purchase for user id', 404
 
     UTC_OFFSET = 3  # BRASÍLIA UTC
     time = datetime.now() - timedelta(hours=UTC_OFFSET)
 
-    new_state = data['new_state']
-    is_valid = validators.validate_state(new_state)
-
-    if is_valid:
-        purchase.update(
-            set__state=new_state,
-            set__date=time
-        )
-        response = f'Purchase {str(purchase["id"])} sucssessfully updated'
-        return response, 200
-    else:
-        return 'Invalid state', 400
+    purchase.update(
+        set__state=new_state,
+        set__date=time
+    )
+    response = f'Purchase {str(purchase["id"])} successfully updated'
+    return response, 200
 
 
 def delete_purchase(user_id):
