@@ -52,3 +52,25 @@ def items_to_products(items):
         i['quantity'] = len(products_ids[i['productid']])
 
     return products
+
+
+def structure_repeated_products(purchases):
+    all_products = []
+    for i in purchases:
+        if i['state'] == 'COMPLETED':
+            all_products += i['purchased_products']
+
+    purchased_products = dict()  # key=productname, value=list of products
+    for i in all_products:
+        if 'rfids' in i:
+            del i['rfids']
+
+        product_name = i['productname']
+        if product_name in purchased_products.keys():
+            purchased_products[product_name]['quantity'] += i['quantity']
+        else:
+            purchased_products[product_name] = i
+
+    purchased_products = [purchased_products[x] for x in purchased_products]
+
+    return purchased_products

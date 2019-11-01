@@ -131,9 +131,23 @@ def purchase_dump(user_id):
         return get_user_purchases_status(user_id)
 
     purchases = PurchaseModel.objects()
-    user_ids = set([x['user_id'] for x in purchases])
 
-    raise Exception(user_ids)
+    users = dict()
+    for p in purchases:
+        user_id = str(p['user_id'])
+        if user_id in users.keys():
+            users[user_id].append(p)
+        else:
+            users[user_id] = [p]
+
+    response = []
+    for user in users:
+        u_products = data_formatter.structure_repeated_products(users[user])
+        for p in u_products:
+            p['user_id'] = user
+        response += u_products
+
+    return response, 200
 
 
 def get_user_purchases_status(user_id):
@@ -141,19 +155,9 @@ def get_user_purchases_status(user_id):
     if not user_purchases:
         return 'There are no purchases for user', 404
 
-    all_products = []
-    for i in user_purchases:
-        if i['state'] == 'COMPLETED':
-            all_products += i['purchased_products']
-
-    purchased_products = dict()  # key=productname, value=list of products
-    for i in all_products:
-        product_name = i['productname']
-        if product_name in purchased_products.keys():
-            purchased_products[product_name]['quantity'] += i['quantity']
-        else:
-            purchased_products[product_name] = i
-
+    purchased_products = data_formatter.structure_repeated_products(
+        user_purchases
+    )
     return purchased_products, 200
 
 
