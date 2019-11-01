@@ -64,35 +64,24 @@ def server_update_purchase(data):
 
     value = sum([x['productprice'] for x in beautiful_items])
 
-    temp = {}
-    temp2 = []
+    products_ids = dict()  # key = productid, value = quantity
+    products = []
     for i in beautiful_items:
-        rfid = i['rfid']
-        productId = i['productid']
-        if not productId in temp:
-            del i['rfid']
-            temp[productId] = i
-        if 'rfids' in temp[productId]:
-            temp[productId]['rfids'] = temp[productId]['rfids'] + [rfid]
+        if i['productid'] in products_ids.keys():
+            products_ids[i['productid']] += 1
         else:
-            temp[productId]['rfids'] = [rfid]
-        if 'qntd' in temp[productId]:
-            temp[productId]['qntd'] += 1
-        else:
-            temp[productId]['qntd'] = 1
-
-    for product in temp.values():
-        temp2.append(product)
+            products_ids[i['productid']] = 1
+            products.append(i)
+    for i in products:
+        i['quantity'] = products_ids[i['productid']]
 
     purchase.update(
         set__state='PAYING',
-        set__purchased_products=temp2,
+        set__purchased_products=products,
         set__value=value
     )
 
-    logging.debug('entrou aqui')
     response = f'Purchase {str(purchase["id"])} sucssessfully updated'
-    logging.debug('entrou aqui 2')
     return response, 200
 
 
