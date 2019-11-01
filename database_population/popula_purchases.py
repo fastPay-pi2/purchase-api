@@ -73,7 +73,7 @@ def generate_user_id_list(items_number):
     items_number: Integer -> number of products in database
     """
     allowed_numbers = list(range(2, 10))
-    
+
     allowed_numbers_str = [str(number) for number in allowed_numbers]
 
     # lowercase a - z indexes
@@ -81,8 +81,9 @@ def generate_user_id_list(items_number):
     allowed_digits = allowed_numbers_str + allowed_characters
     user_id_list = list(map(''.join, itertools.islice(
                                      itertools.combinations_with_replacement(
-                                        allowed_digits, 24), items_number + 1)))
+                                       allowed_digits, 24), items_number + 1)))
     return user_id_list
+
 
 def return_random_items(random_range, rfids_list, items_number):
     items = []
@@ -109,7 +110,7 @@ def build_item_json(user_id, cart, state):
     return item_json
 
 
-def create_items(items_number, rfids_list, carts_list, 
+def create_items(items_number, rfids_list, carts_list,
                  user_id_list, carts_number, table):
     """
     Create items in database
@@ -134,26 +135,25 @@ def create_items(items_number, rfids_list, carts_list,
             if cart_index > 29:
                 cart_index = 0
 
-
             post_json = {
                 "user_id": user_id_list[i],
                 "cart_id": carts_list[cart_index]
-            }            
-            post_req = requests.post(f'{PURCHASE_API_URL}/{table}/',
-                                     json=post_json)
+            }
+            requests.post(f'{PURCHASE_API_URL}/{table}/',
+                          json=post_json)
             user_items.append(carts_list[cart_index])
 
             server_put_json = {
                 "items": user_items
             }
-            server_put = requests.put(f'{PURCHASE_API_URL}/'
+            requests.put(f'{PURCHASE_API_URL}/'
                          f'{table}/',
                          json=server_put_json)
 
             state_json = {
                 "new_state": "COMPLETED"
             }
-            user_put = requests.put(f'{PURCHASE_API_URL}/'
+            requests.put(f'{PURCHASE_API_URL}/'
                          f'{table}/{user_id_list[i]}',
                          json=state_json)
             cart_index += 1
