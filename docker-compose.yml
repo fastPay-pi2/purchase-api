@@ -21,7 +21,19 @@ services:
       - FLASK_ENV=development
       - APP_SETTINGS=application.config.DevelopmentConfig
       - PRODUCTS_API=http://products_api:3000/
-  
+
+  socket:
+    container_name: socket
+    build:
+      context: .
+      dockerfile: ./docker/socket.Dockerfile
+    volumes:
+      - './purchase_socket:/usr/src/app'
+    networks:
+      - fastpay-network
+    ports:
+      - 5001:5001
+
   purchase_db:
     container_name: purchase_db
     image: mongo
@@ -31,7 +43,7 @@ services:
     networks:
       - fastpay-network
     ports:
-      - 27018:27018
+      - 27018:27018  
 
   purchase_db_population:
     container_name: purchase_db_population
