@@ -1,6 +1,7 @@
 from application.api.models import CartModel, PurchaseModel
 from datetime import datetime, timedelta
 from requests import get
+from decimal import Decimal
 import logging
 import os
 from application.api.utils import (
@@ -62,7 +63,7 @@ def server_update_purchase(data):
 
     beautiful_items = get(BEAUTIFUL_ITEMS_URL, json=product_items).json()
     products = data_formatter.items_to_products(beautiful_items)
-    value = sum([x['productprice'] for x in beautiful_items])
+    value = sum([Decimal(str(x['productprice'])) for x in beautiful_items])
 
     purchase.update(
         set__state='PAYING',
