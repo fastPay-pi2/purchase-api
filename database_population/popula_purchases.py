@@ -15,7 +15,7 @@ logging.basicConfig(
 
 
 PRODUCT_API_URL = os.getenv("PRODUCT_API_URL", "http://localhost:3000")
-PURCHASE_API_URL = os.getenv("PURCHASE_API_URL", "http://localhost:5000")
+PURCHASE_API_URL = os.getenv("PURCHASE_API_URL", "http://localhost:5000/api")
 # PRODUCT_API_URL = 'http://localhost:3000'
 
 
@@ -72,16 +72,21 @@ def generate_user_id_list(items_number):
     >>> Params:
     items_number: Integer -> number of products in database
     """
-    allowed_numbers = list(range(2, 10))
+    user_id_list = []
+    for i in range(0, items_number):
+        data = {
+            "name": "Name",
+            "username": str(i),
+            "email": f"{str(i)}@gmail.com",
+            "cpf": str(i),
+            "password": "pass",
+            "birphday": "2009-10-13T19:27:44.193Z",
+            "isAdmin": False
+        }
 
-    allowed_numbers_str = [str(number) for number in allowed_numbers]
-
-    # lowercase a - z indexes
-    allowed_characters = list(map(chr, range(97, 103)))
-    allowed_digits = allowed_numbers_str + allowed_characters
-    user_id_list = list(map(''.join, itertools.islice(
-                                     itertools.combinations_with_replacement(
-                                       allowed_digits, 24), items_number + 1)))
+        req = requests.post('http://localhost:3001/users', json=data).json()
+        print(req)
+        user_id_list.append(str(req['_id']))
     return user_id_list
 
 
@@ -136,7 +141,7 @@ def create_items(items_number, rfids_list, carts_list,
                 cart_index = 0
 
             post_json = {
-                "user_id": user_id_list[i],
+                "user_id": random.choice(user_id_list),
                 "cart_id": carts_list[cart_index]
             }
             requests.post(f'{PURCHASE_API_URL}/{table}/',

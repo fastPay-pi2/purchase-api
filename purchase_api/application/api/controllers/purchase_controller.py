@@ -1,6 +1,7 @@
 from application.api.models import CartModel, PurchaseModel
 from datetime import datetime, timedelta
 from requests import get
+from decimal import Decimal
 import logging
 import os
 from application.api.utils import (
@@ -55,14 +56,23 @@ def server_update_purchase(data):
 
     # If it does not exist, db raises an exception
     cart = CartModel.objects.get(rfid=cart_rfid)
-    purchase = PurchaseModel.objects.get(cart=cart['id'], state='ONGOING')
+    purchase = PurchaseModel.objects.filter(
+        cart=cart['id'],
+        state__in=['ONGOING', 'PAYING']
+    )
+
+    res, status = validators.validate_existing_purchase(purchase)
+    if status == 200:
+        purchase = res
+    else:
+        return res, status
 
     product_items = dict()
     product_items['rfids'] = data['items']
 
     beautiful_items = get(BEAUTIFUL_ITEMS_URL, json=product_items).json()
     products = data_formatter.items_to_products(beautiful_items)
-    value = sum([x['productprice'] for x in beautiful_items])
+    value = sum([Decimal(str(x['productprice'])) for x in beautiful_items])
 
     purchase.update(
         set__state='PAYING',
@@ -85,12 +95,18 @@ def user_update_purchase(data, user_id):
     else:
         return 'Invalid state', 400
 
-    if len(purchase) == 1:
-        purchase = purchase[0]
-    elif len(purchase) > 1:
-        return 'More than 1 purchase found for user', 400
-    elif len(purchase) == 0:
-        return 'It was not possible to find a purchase for user id', 404
+    # if len(purchase) == 1:
+    #     purchase = purchase[0]
+    # elif len(purchase) > 1:
+    #     return 'More than 1 purchase found for user', 400
+    # elif len(purchase) == 0:
+    #     return 'It was not possible to find a purchase for user id', 404
+
+    res, status = validators.validate_existing_purchase(purchase)
+    if status == 200:
+        purchase = res
+    else:
+        return res, status
 
     UTC_OFFSET = 3  # BRASÍLIA UTC
     time = datetime.now() - timedelta(hours=UTC_OFFSET)
@@ -131,9 +147,23 @@ def purchase_dump(user_id):
         return get_user_purchases_status(user_id)
 
     purchases = PurchaseModel.objects()
-    user_ids = set([x['user_id'] for x in purchases])
 
-    raise Exception(user_ids)
+    users = dict()
+    for p in purchases:
+        user_id = str(p['user_id'])
+        if user_id in users.keys():
+            users[user_id].append(p)
+        else:
+            users[user_id] = [p]
+
+    response = []
+    for user in users:
+        u_products = data_formatter.structure_repeated_products(users[user])
+        for p in u_products:
+            p['user_id'] = user
+        response += u_products
+
+    return response, 200
 
 
 def get_user_purchases_status(user_id):
@@ -141,19 +171,9 @@ def get_user_purchases_status(user_id):
     if not user_purchases:
         return 'There are no purchases for user', 404
 
-    all_products = []
-    for i in user_purchases:
-        if i['state'] == 'COMPLETED':
-            all_products += i['purchased_products']
-
-    purchased_products = dict()  # key=productname, value=list of products
-    for i in all_products:
-        product_name = i['productname']
-        if product_name in purchased_products.keys():
-            purchased_products[product_name]['quantity'] += i['quantity']
-        else:
-            purchased_products[product_name] = i
-
+    purchased_products = data_formatter.structure_repeated_products(
+        user_purchases
+    )
     return purchased_products, 200
 
 

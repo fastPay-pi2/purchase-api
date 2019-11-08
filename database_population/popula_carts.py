@@ -14,7 +14,7 @@ logging.basicConfig(
 
 
 PRODUCT_API_URL = os.getenv("PRODUCT_API_URL", "http://localhost:3000")
-PURCHASE_API_URL = os.getenv("PURCHASE_API_URL", "http://localhost:5000")
+PURCHASE_API_URL = os.getenv("PURCHASE_API_URL", "http://localhost:5000/api")
 # PRODUCT_API_URL = 'http://localhost:3000'
 
 
