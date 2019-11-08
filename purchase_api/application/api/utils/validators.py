@@ -38,3 +38,18 @@ def validate_state(state):
         return True
     else:
         return False
+
+
+def validate_existing_purchase(purchase):
+    status = 200
+
+    if len(purchase) == 1:
+        res = purchase[0]
+    elif len(purchase) > 1:
+        status = 400
+        res = 'More than 1 purchase found for user'
+    elif len(purchase) == 0:
+        status = 404
+        res = 'It was not possible to find a purchase for user id'
+
+    return res, status

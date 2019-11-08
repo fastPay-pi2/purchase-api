@@ -56,7 +56,16 @@ def server_update_purchase(data):
 
     # If it does not exist, db raises an exception
     cart = CartModel.objects.get(rfid=cart_rfid)
-    purchase = PurchaseModel.objects.get(cart=cart['id'], state='ONGOING')
+    purchase = PurchaseModel.objects.filter(
+        cart=cart['id'],
+        state__in=['ONGOING', 'PAYING']
+    )
+
+    res, status = validators.validate_existing_purchase(purchase)
+    if status == 200:
+        purchase = res
+    else:
+        return res, status
 
     product_items = dict()
     product_items['rfids'] = data['items']
@@ -86,12 +95,18 @@ def user_update_purchase(data, user_id):
     else:
         return 'Invalid state', 400
 
-    if len(purchase) == 1:
-        purchase = purchase[0]
-    elif len(purchase) > 1:
-        return 'More than 1 purchase found for user', 400
-    elif len(purchase) == 0:
-        return 'It was not possible to find a purchase for user id', 404
+    # if len(purchase) == 1:
+    #     purchase = purchase[0]
+    # elif len(purchase) > 1:
+    #     return 'More than 1 purchase found for user', 400
+    # elif len(purchase) == 0:
+    #     return 'It was not possible to find a purchase for user id', 404
+
+    res, status = validators.validate_existing_purchase(purchase)
+    if status == 200:
+        purchase = res
+    else:
+        return res, status
 
     UTC_OFFSET = 3  # BRASÍLIA UTC
     time = datetime.now() - timedelta(hours=UTC_OFFSET)
