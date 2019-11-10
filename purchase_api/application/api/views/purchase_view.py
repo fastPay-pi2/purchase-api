@@ -4,7 +4,8 @@ from flask_cors import CORS
 
 from application.api.utils import (
     validators,
-    decorators
+    decorators,
+    authentication
 )
 from application.api.controllers.purchase_controller import (
     server_update_purchase,
@@ -23,6 +24,10 @@ CORS(purchase_blueprint)
 class Purchase(Resource):
     @decorators.handle_exceptions
     def post(self):
+        response, status = authentication.authenticate(request.headers)
+        if status != 200:
+            return response, status
+
         data = request.get_json()
         err = validators.validate_fields(data, 'user_id', 'cart_id')
         if err:
@@ -38,6 +43,10 @@ class Purchase(Resource):
 
         # endpoint for the user
         if user_id:
+            response, status = authentication.authenticate(request.headers)
+            if status != 200:
+                return response, status
+
             err = validators.validate_fields(data, 'new_state')
             if err:
                 err = f'Fields are missing: {", ".join(err)}'
@@ -57,6 +66,11 @@ class Purchase(Resource):
 
     @decorators.handle_exceptions
     def get(self, user_id=None):
+        if user_id:
+            response, status = authentication.authenticate(request.headers)
+            if status != 200:
+                return response, status
+
         response, status = get_purchases(user_id)
         return response, status
 

@@ -88,19 +88,19 @@ def user_update_purchase(data, user_id):
     new_state = data['new_state']
     is_valid = validators.validate_state(new_state)
     if is_valid:
+        # the state can only become 'completed' if it's in PAYING state
+        if new_state == 'COMPLETED':
+            states_to_search = ['PAYING']
+        # the state can become 'aborted' at any time during the purchase
+        elif new_state == 'ABORTED':
+            states_to_search = ['ONGOING', 'PAYING']
+
         purchase = PurchaseModel.objects.filter(
             user_id=user_id,
-            state__in=['ONGOING', 'PAYING']
+            state__in=states_to_search
         )
     else:
         return 'Invalid state', 400
-
-    # if len(purchase) == 1:
-    #     purchase = purchase[0]
-    # elif len(purchase) > 1:
-    #     return 'More than 1 purchase found for user', 400
-    # elif len(purchase) == 0:
-    #     return 'It was not possible to find a purchase for user id', 404
 
     res, status = validators.validate_existing_purchase(purchase)
     if status == 200:
