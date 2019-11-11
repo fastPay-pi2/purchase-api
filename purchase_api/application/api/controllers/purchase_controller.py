@@ -1,16 +1,13 @@
 from application.api.models import CartModel, PurchaseModel
+from application.api.services import products_api
 from datetime import datetime, timedelta
-from requests import get
 from decimal import Decimal
 import logging
-import os
+
 from application.api.utils import (
     validators,
     data_formatter
 )
-
-PRODUCTS_API = os.getenv("PRODUCTS_API", "")
-BEAUTIFUL_ITEMS_URL = PRODUCTS_API + "beautifulitems"
 
 FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
 logging.basicConfig(
@@ -68,9 +65,9 @@ def server_update_purchase(data):
         return res, status
 
     product_items = dict()
-    product_items['rfids'] = data['items']
+    product_items['rfids'] = list(set(data['items']))
 
-    beautiful_items = get(BEAUTIFUL_ITEMS_URL, json=product_items).json()
+    beautiful_items = products_api.get_beautiful_items(product_items)
     products = data_formatter.items_to_products(beautiful_items)
     value = sum([Decimal(str(x['productprice'])) for x in beautiful_items])
 
@@ -91,6 +88,7 @@ def user_update_purchase(data, user_id):
         # the state can only become 'completed' if it's in PAYING state
         if new_state == 'COMPLETED':
             states_to_search = ['PAYING']
+
         # the state can become 'aborted' at any time during the purchase
         elif new_state == 'ABORTED':
             states_to_search = ['ONGOING', 'PAYING']
@@ -108,13 +106,21 @@ def user_update_purchase(data, user_id):
     else:
         return res, status
 
+    purchased_rfids = []
+    for purchased_products in purchase['purchased_products']:
+        purchased_rfids += purchased_products['rfids']
+        purchased_products['rfids'] = []
+
+    if new_state == 'COMPLETED':
+        products_api.delete_items(purchased_rfids)
+
     UTC_OFFSET = 3  # BRASÍLIA UTC
     time = datetime.now() - timedelta(hours=UTC_OFFSET)
 
-    purchase.update(
-        set__state=new_state,
-        set__date=time
-    )
+    purchase.state = new_state
+    purchase.date = time
+    purchase.save()
+
     response = f'Purchase {str(purchase["id"])} successfully updated'
     return response, 200
 

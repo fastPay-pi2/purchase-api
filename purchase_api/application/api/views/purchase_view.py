@@ -1,11 +1,11 @@
+from application.api.services import authentication
 from flask_restful import Resource, Api
 from flask import Blueprint, request
 from flask_cors import CORS
 
 from application.api.utils import (
     validators,
-    decorators,
-    authentication
+    decorators
 )
 from application.api.controllers.purchase_controller import (
     server_update_purchase,
