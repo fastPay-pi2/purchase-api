@@ -13,7 +13,8 @@ from application.api.controllers.purchase_controller import (
     delete_purchase,
     start_purchase,
     get_purchases,
-    purchase_dump
+    purchase_dump,
+    purchase_validation
 )
 
 purchase_blueprint = Blueprint('views', __name__)
@@ -87,6 +88,20 @@ class PurchaseDump(Resource):
         return response, status
 
 
+class PurchaseValidation(Resource):
+    @decorators.handle_exceptions
+    def post(self):
+        data = request.get_json()
+        err = validators.validate_fields(data, 'cart', 'items')
+        if err:
+            err = f'Fields are missing: {", ".join(err)}'
+            return err, 400
+        else:
+            response, status = purchase_validation(data)
+            return response, status
+
+
+# Purchase endpoints
 api.add_resource(Purchase, '/api/purchase/',
                  endpoint="purchase",
                  methods=['POST', 'GET'])
@@ -100,9 +115,15 @@ api.add_resource(Purchase, '/api/userpurchases/<user_id>',
                  endpoint="list_user_purchases",
                  methods=['GET', 'DELETE'])
 
+# PurchaseDump endpoints
 api.add_resource(PurchaseDump, '/api/purchasedump/',
                  endpoint="purchase_dump",
                  methods=['GET'])
 api.add_resource(PurchaseDump, '/api/purchasedump/<user_id>',
                  endpoint="user_purchase_dump",
                  methods=['GET'])
+
+# PurchaseValidation endpoints
+api.add_resource(PurchaseValidation, '/api/purchasevalidation/',
+                 endpoint="purchase_validation",
+                 methods=['POST'])

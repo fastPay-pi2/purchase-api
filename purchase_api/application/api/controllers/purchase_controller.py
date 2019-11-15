@@ -1,6 +1,7 @@
 from application.api.models import CartModel, PurchaseModel
 from application.api.services import products_api
 from datetime import datetime, timedelta
+from collections import Counter
 from decimal import Decimal
 import logging
 
@@ -33,7 +34,7 @@ def start_purchase(data):
 
     purchase = PurchaseModel()
     purchase.user_id = data['user_id']
-    purchase.cart = cart['id']
+    purchase.cart = cart['rfid']
     purchase.state = 'ONGOING'
     purchase.purchased_products = []
     purchase.save()
@@ -54,7 +55,7 @@ def server_update_purchase(data):
     # If it does not exist, db raises an exception
     cart = CartModel.objects.get(rfid=cart_rfid)
     purchase = PurchaseModel.objects.filter(
-        cart=cart['id'],
+        cart=cart['rfid'],
         state__in=['ONGOING', 'PAYING']
     )
 
@@ -111,6 +112,7 @@ def user_update_purchase(data, user_id):
         purchased_rfids += purchased_products['rfids']
         purchased_products['rfids'] = []
 
+    # TODO uncomment
     if new_state == 'COMPLETED':
         products_api.delete_items(purchased_rfids)
 
@@ -150,7 +152,7 @@ def get_purchases(user_id):
 
 def purchase_dump(user_id):
     if user_id:
-        return get_user_purchases_status(user_id)
+        return user_purchases_dump(user_id)
 
     purchases = PurchaseModel.objects()
 
@@ -172,7 +174,7 @@ def purchase_dump(user_id):
     return response, 200
 
 
-def get_user_purchases_status(user_id):
+def user_purchases_dump(user_id):
     user_purchases = PurchaseModel.objects(user_id=user_id)
     if not user_purchases:
         return 'There are no purchases for user', 404
@@ -181,6 +183,43 @@ def get_user_purchases_status(user_id):
         user_purchases
     )
     return purchased_products, 200
+
+
+def purchase_validation(data):
+    cart_rfid = data['cart']
+    items = data['items']
+
+    cart_purchases = PurchaseModel.objects.filter(
+        cart=cart_rfid,
+        state='COMPLETED'
+    ).order_by('-date')
+
+    if cart_purchases:
+        last_purchase = cart_purchases[0]
+        # return data_formatter.build_purchase_json(last_purchase), 200
+    else:
+        err = 'Could not find any purchase for cart'
+        return err, 404
+
+    items = Counter(items)  # dict -> key: barcode, value: quantity
+    missing_products = []
+    for product in last_purchase['purchased_products']:
+        quantity = product['quantity']
+        barcode = product['barcode']
+
+        missing_prod = dict()
+        if quantity != items[barcode]:
+            missing_prod['name'] = product['productname']
+            missing_prod['purchase_quantity'] = product['quantity']
+            missing_prod['missing'] = quantity - items[barcode]
+            missing_products.append(missing_prod)
+
+    response = dict()
+    if missing_products:
+        response['missing_products'] = missing_products
+        return response, 418
+    else:
+        return "It's all good", 200
 
 
 def check_pending_purchase(user_id):
@@ -195,7 +234,7 @@ def check_pending_purchase(user_id):
 
 
 def check_cart_in_use(cart):
-    used_carts = PurchaseModel.objects(state='ONGOING', cart=cart['id'])
+    used_carts = PurchaseModel.objects(state='ONGOING', cart=cart['rfid'])
     if used_carts:
         err = 'Cart already being used in another purchase'
         return err
