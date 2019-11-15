@@ -25,7 +25,8 @@ class PurchaseModel(mongoengine.Document):
                                      required=False)
     purchased_products = mongoengine.ListField(mongoengine.DictField(),
                                                required=False)
-    cart = mongoengine.ObjectIdField(required=True)
+    cart = mongoengine.StringField(required=True,
+                                   max_length=41)
     value = mongoengine.FloatField(default=0, min_value=0,
                                    required=False)
     meta = {

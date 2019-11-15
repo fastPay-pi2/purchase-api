@@ -1,8 +1,10 @@
 from application.api.models import CartModel, PurchaseModel
 from application.api.services import products_api
-from datetime import datetime, timedelta
+from tzlocal import get_localzone
+from datetime import datetime
 from decimal import Decimal
 import logging
+import pytz
 
 from application.api.utils import (
     validators,
@@ -33,7 +35,7 @@ def start_purchase(data):
 
     purchase = PurchaseModel()
     purchase.user_id = data['user_id']
-    purchase.cart = cart['id']
+    purchase.cart = cart['rfid']
     purchase.state = 'ONGOING'
     purchase.purchased_products = []
     purchase.save()
@@ -54,7 +56,7 @@ def server_update_purchase(data):
     # If it does not exist, db raises an exception
     cart = CartModel.objects.get(rfid=cart_rfid)
     purchase = PurchaseModel.objects.filter(
-        cart=cart['id'],
+        cart=cart['rfid'],
         state__in=['ONGOING', 'PAYING']
     )
 
@@ -114,11 +116,12 @@ def user_update_purchase(data, user_id):
     if new_state == 'COMPLETED':
         products_api.delete_items(purchased_rfids)
 
-    UTC_OFFSET = 3  # BRASÍLIA UTC
-    time = datetime.now() - timedelta(hours=UTC_OFFSET)
+    tz = get_localzone()
+    local_dt = tz.localize(datetime.now(), is_dst=None)
+    utc_dt = local_dt.astimezone(pytz.utc)
 
     purchase.state = new_state
-    purchase.date = time
+    purchase.date = utc_dt
     purchase.save()
 
     response = f'Purchase {str(purchase["id"])} successfully updated'
@@ -148,41 +151,6 @@ def get_purchases(user_id):
     return response, 200
 
 
-def purchase_dump(user_id):
-    if user_id:
-        return get_user_purchases_status(user_id)
-
-    purchases = PurchaseModel.objects()
-
-    users = dict()
-    for p in purchases:
-        user_id = str(p['user_id'])
-        if user_id in users.keys():
-            users[user_id].append(p)
-        else:
-            users[user_id] = [p]
-
-    response = []
-    for user in users:
-        u_products = data_formatter.structure_repeated_products(users[user])
-        for p in u_products:
-            p['user_id'] = user
-        response += u_products
-
-    return response, 200
-
-
-def get_user_purchases_status(user_id):
-    user_purchases = PurchaseModel.objects(user_id=user_id)
-    if not user_purchases:
-        return 'There are no purchases for user', 404
-
-    purchased_products = data_formatter.structure_repeated_products(
-        user_purchases
-    )
-    return purchased_products, 200
-
-
 def check_pending_purchase(user_id):
     user_purchases = PurchaseModel.objects(user_id=user_id)
     states = ['ONGOING', 'PAYING']  # Pending states
@@ -195,7 +163,7 @@ def check_pending_purchase(user_id):
 
 
 def check_cart_in_use(cart):
-    used_carts = PurchaseModel.objects(state='ONGOING', cart=cart['id'])
+    used_carts = PurchaseModel.objects(state='ONGOING', cart=cart['rfid'])
     if used_carts:
         err = 'Cart already being used in another purchase'
         return err
