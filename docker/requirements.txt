@@ -7,3 +7,5 @@ jsonschema==3.0.1
 coverage==4.5.3
 mongoengine==0.18.2
 flask-restful==0.3.7
+tzlocal==2.0.0
+
