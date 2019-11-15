@@ -1,9 +1,6 @@
 from application.api.models import PurchaseModel
 
-from application.api.utils import (
-    validators,
-    data_formatter
-)
+from application.api.utils import data_formatter
 
 
 def purchase_dump(user_id):

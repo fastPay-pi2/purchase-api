@@ -1,9 +1,10 @@
 from application.api.models import CartModel, PurchaseModel
 from application.api.services import products_api
-from datetime import datetime, timedelta
-from collections import Counter
+from tzlocal import get_localzone
+from datetime import datetime
 from decimal import Decimal
 import logging
+import pytz
 
 from application.api.utils import (
     validators,
@@ -115,11 +116,12 @@ def user_update_purchase(data, user_id):
     if new_state == 'COMPLETED':
         products_api.delete_items(purchased_rfids)
 
-    UTC_OFFSET = 3  # BRASÍLIA UTC
-    time = datetime.now() - timedelta(hours=UTC_OFFSET)
+    tz = get_localzone()
+    local_dt = tz.localize(datetime.now(), is_dst=None)
+    utc_dt = local_dt.astimezone(pytz.utc)
 
     purchase.state = new_state
-    purchase.date = time
+    purchase.date = utc_dt
     purchase.save()
 
     response = f'Purchase {str(purchase["id"])} successfully updated'

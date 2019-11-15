@@ -40,7 +40,7 @@ def purchase_validation(data):
             missing_products.append(missing_prod)
         elif quantity < items[barcode]:
             err = ('Someone actually bought a product and left it: '
-                  f'{product["productname"]} -> {barcode}')
+                   f'{product["productname"]} -> {barcode}')
             logging.error(err)
 
     response = dict()
