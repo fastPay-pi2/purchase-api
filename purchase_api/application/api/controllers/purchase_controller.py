@@ -112,7 +112,6 @@ def user_update_purchase(data, user_id):
         purchased_rfids += purchased_products['rfids']
         purchased_products['rfids'] = []
 
-    # TODO uncomment
     if new_state == 'COMPLETED':
         products_api.delete_items(purchased_rfids)
 
@@ -148,78 +147,6 @@ def get_purchases(user_id):
     for p in purchases:
         response.append(data_formatter.build_purchase_json(p))
     return response, 200
-
-
-def purchase_dump(user_id):
-    if user_id:
-        return user_purchases_dump(user_id)
-
-    purchases = PurchaseModel.objects()
-
-    users = dict()
-    for p in purchases:
-        user_id = str(p['user_id'])
-        if user_id in users.keys():
-            users[user_id].append(p)
-        else:
-            users[user_id] = [p]
-
-    response = []
-    for user in users:
-        u_products = data_formatter.structure_repeated_products(users[user])
-        for p in u_products:
-            p['user_id'] = user
-        response += u_products
-
-    return response, 200
-
-
-def user_purchases_dump(user_id):
-    user_purchases = PurchaseModel.objects(user_id=user_id)
-    if not user_purchases:
-        return 'There are no purchases for user', 404
-
-    purchased_products = data_formatter.structure_repeated_products(
-        user_purchases
-    )
-    return purchased_products, 200
-
-
-def purchase_validation(data):
-    cart_rfid = data['cart']
-    items = data['items']
-
-    cart_purchases = PurchaseModel.objects.filter(
-        cart=cart_rfid,
-        state='COMPLETED'
-    ).order_by('-date')
-
-    if cart_purchases:
-        last_purchase = cart_purchases[0]
-        # return data_formatter.build_purchase_json(last_purchase), 200
-    else:
-        err = 'Could not find any purchase for cart'
-        return err, 404
-
-    items = Counter(items)  # dict -> key: barcode, value: quantity
-    missing_products = []
-    for product in last_purchase['purchased_products']:
-        quantity = product['quantity']
-        barcode = product['barcode']
-
-        missing_prod = dict()
-        if quantity != items[barcode]:
-            missing_prod['name'] = product['productname']
-            missing_prod['purchase_quantity'] = product['quantity']
-            missing_prod['missing'] = quantity - items[barcode]
-            missing_products.append(missing_prod)
-
-    response = dict()
-    if missing_products:
-        response['missing_products'] = missing_products
-        return response, 418
-    else:
-        return "It's all good", 200
 
 
 def check_pending_purchase(user_id):

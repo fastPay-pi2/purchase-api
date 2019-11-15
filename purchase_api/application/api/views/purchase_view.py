@@ -12,8 +12,14 @@ from application.api.controllers.purchase_controller import (
     user_update_purchase,
     delete_purchase,
     start_purchase,
-    get_purchases,
-    purchase_dump,
+    get_purchases
+)
+
+from application.api.controllers.dump_controller import (
+    purchase_dump
+)
+
+from application.api.controllers.purchase_validation_controller import (
     purchase_validation
 )
 
