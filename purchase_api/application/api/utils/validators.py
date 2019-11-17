@@ -47,9 +47,9 @@ def validate_existing_purchase(purchase):
         res = purchase[0]
     elif len(purchase) > 1:
         status = 400
-        res = 'More than 1 purchase found for user'
+        res = 'More than 1 purchase was found'
     elif len(purchase) == 0:
         status = 404
-        res = 'It was not possible to find a purchase for user id'
+        res = 'It was not possible to find any purchase'
 
     return res, status

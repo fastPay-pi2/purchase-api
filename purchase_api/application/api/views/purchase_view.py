@@ -98,7 +98,7 @@ class PurchaseValidation(Resource):
     @decorators.handle_exceptions
     def post(self):
         data = request.get_json()
-        err = validators.validate_fields(data, 'cart', 'items')
+        err = validators.validate_fields(data, 'cart')
         if err:
             err = f'Fields are missing: {", ".join(err)}'
             return err, 400
