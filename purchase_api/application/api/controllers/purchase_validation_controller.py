@@ -1,4 +1,5 @@
 from application.api.models import PurchaseModel
+from application.api.utils import validators
 from collections import Counter
 import logging
 
@@ -13,7 +14,11 @@ logging.basicConfig(
 
 def purchase_validation(data):
     cart_rfid = data['cart']
-    items = data['items']
+
+    if 'items' not in data:
+        return cancel_purchase(cart_rfid)
+    else:
+        items = data['items']
 
     cart_purchases = PurchaseModel.objects.filter(
         cart=cart_rfid,
@@ -49,3 +54,21 @@ def purchase_validation(data):
         return response, 418
     else:
         return "It's all good", 200
+
+
+def cancel_purchase(cart_rfid):
+    states_to_search = ['ONGOING', 'PAYING']
+    pending_purchase = PurchaseModel.objects.filter(
+        cart=cart_rfid,
+        state__in=states_to_search
+    )
+
+    res, status = validators.validate_existing_purchase(pending_purchase)
+    if status != 200:
+        return res, status
+    else:  # res = 1 purchase
+        purchase = res
+        purchase.state = 'ABORTED'
+        purchase.purchased_products = []
+        purchase.save()
+        return 'Purchase successfully cancelled', 200
